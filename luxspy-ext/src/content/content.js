@@ -4,15 +4,15 @@ console.log('LuxSpy: Content script loaded on AutoDarts match page');
 
 // Function to get current player name
 function getCurrentPlayerName() {
-    const playerElement = document.querySelector('.ad-ext-player-active *> .ad-ext-player-name');
+    const playerElement = document.querySelector(CONFIG.SELECTORS.PLAYER_NAME);
     return playerElement?.innerText || null;
 }
 
 // Function to get game state
 function getGameState() {
-    if (document.querySelector('div.css-aiihgx')) {
+    if (document.querySelector(CONFIG.SELECTORS.READY_STATE)) {
         return 'ready';
-    } else if (document.querySelector('div.css-3nk254')) {
+    } else if (document.querySelector(CONFIG.SELECTORS.TAKEOUT_STATE)) {
         return 'takeout';
     } else {
         return 'idle';
@@ -22,13 +22,40 @@ function getGameState() {
 // Function to check if current player is in navigation
 function isCurrentPlayerInNavigation() {
     const currentPlayerName = getCurrentPlayerName();
-    const navigationImg = document.querySelector('.navigation *> img');
+    const navigationImg = document.querySelector(CONFIG.SELECTORS.NAVIGATION_IMG);
     
     if (!currentPlayerName || !navigationImg) {
         return false;
     }
     
     return navigationImg.alt === currentPlayerName;
+}
+
+// Function to send event to LuxSpy server
+async function sendEventToServer(eventData) {
+    const serverUrl = `${CONFIG.SERVER_URL}/api/event`;
+    
+    try {
+        const response = await fetch(serverUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'luxspyEvent',
+                data: eventData
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('LuxSpy: Event sent to server successfully:', result);
+        } else {
+            console.error('LuxSpy: Server responded with error:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('LuxSpy: Failed to send event to server:', error);
+    }
 }
 
 // Function to log all monitored data
@@ -59,6 +86,9 @@ function logMonitoredData() {
         }
         console.error('LuxSpy: Error sending message:', error);
     });
+
+    // Send event to LuxSpy server
+    sendEventToServer(eventData);
 }
 
 // Initial log
@@ -88,7 +118,7 @@ const observer = new MutationObserver((mutations) => {
     if (shouldLog) {
         // Debounce the logging to avoid excessive console output
         clearTimeout(window.luxspyLogTimeout);
-        window.luxspyLogTimeout = setTimeout(logMonitoredData, 100);
+        window.luxspyLogTimeout = setTimeout(logMonitoredData, CONFIG.DEBOUNCE_DELAY);
     }
 });
 
