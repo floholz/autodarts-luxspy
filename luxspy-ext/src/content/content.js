@@ -37,12 +37,27 @@ function logMonitoredData() {
     const gameState = getGameState();
     const playerInNav = isCurrentPlayerInNavigation();
     
-    console.log('LuxSpy Event:', {
+    const eventData = {
         timestamp: new Date().toISOString(),
         playerName: playerName,
         gameState: gameState,
         playerInNavigation: playerInNav,
         url: window.location.href
+    };
+    
+    console.log('LuxSpy Event:', eventData);
+    
+    // Broadcast event to any listening popups
+    chrome.runtime.sendMessage({
+        action: 'luxspyEvent',
+        data: eventData
+    }).catch(error => {
+        // Ignore connection errors when no popup is open
+        if (error.message.includes('Receiving end does not exist')) {
+            // This is expected when no popup is listening
+            return;
+        }
+        console.error('LuxSpy: Error sending message:', error);
     });
 }
 

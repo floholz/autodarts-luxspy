@@ -3,6 +3,7 @@
 const statusContent = document.getElementById('status-content');
 const refreshBtn = document.getElementById('refresh-btn');
 const clearLogsBtn = document.getElementById('clear-logs-btn');
+const updateIndicator = document.getElementById('update-indicator');
 
 // Function to get current tab and check if it's an AutoDarts match page
 async function getCurrentTab() {
@@ -13,6 +14,27 @@ async function getCurrentTab() {
 // Function to check if the current page is an AutoDarts match
 function isAutoDartsMatchPage(url) {
     return url && url.match(/^https:\/\/play\.autodarts\.io\/matches\/[a-f0-9-]+$/);
+}
+
+// Function to update status display with data
+function updateStatusDisplay(data) {
+    statusContent.innerHTML = `
+        <div class="status-item">
+            <strong>Player Name:</strong> ${data.playerName || 'Not found'}
+        </div>
+        <div class="status-item">
+            <strong>Game State:</strong> <span class="state-${data.gameState}">${data.gameState}</span>
+        </div>
+        <div class="status-item">
+            <strong>Player in Navigation:</strong> ${data.playerInNavigation ? 'Yes' : 'No'}
+        </div>
+        <div class="status-item">
+            <strong>Match URL:</strong> ${data.url}
+        </div>
+        <div class="status-item">
+            <strong>Last Updated:</strong> ${data.timestamp}
+        </div>
+    `;
 }
 
 // Function to update status display
@@ -37,23 +59,7 @@ async function updateStatus() {
     try {
         const response = await chrome.tabs.sendMessage(tab.id, { action: 'getStatus' });
         if (response && response.success) {
-            statusContent.innerHTML = `
-                <div class="status-item">
-                    <strong>Player Name:</strong> ${response.data.playerName || 'Not found'}
-                </div>
-                <div class="status-item">
-                    <strong>Game State:</strong> <span class="state-${response.data.gameState}">${response.data.gameState}</span>
-                </div>
-                <div class="status-item">
-                    <strong>Player in Navigation:</strong> ${response.data.playerInNavigation ? 'Yes' : 'No'}
-                </div>
-                <div class="status-item">
-                    <strong>Match URL:</strong> ${response.data.url}
-                </div>
-                <div class="status-item">
-                    <strong>Last Updated:</strong> ${response.data.timestamp}
-                </div>
-            `;
+            updateStatusDisplay(response.data);
         } else {
             statusContent.innerHTML = '<p class="error">Failed to get status from page</p>';
         }
@@ -77,6 +83,19 @@ async function clearConsoleLogs() {
         }
     }
 }
+
+// Listen for real-time LuxSpy events
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'luxspyEvent') {
+        updateStatusDisplay(message.data);
+        
+        // Animate the update indicator
+        updateIndicator.classList.add('active');
+        setTimeout(() => {
+            updateIndicator.classList.remove('active');
+        }, 1000);
+    }
+});
 
 // Event listeners
 refreshBtn.addEventListener('click', updateStatus);
