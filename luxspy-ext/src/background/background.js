@@ -1,7 +1,17 @@
+// LuxSpy Background Script
+
+console.log('LuxSpy: Background script loaded');
+
+// Handle extension installation
 chrome.runtime.onInstalled.addListener(({reason}) => {
     if (reason === 'install') {
-      chrome.tabs.create({
-        url: "src/onboarding/onboarding.html"
-      });
+        console.log('LuxSpy: Extension installed');
+    } else if (reason === 'update') {
+        console.log('LuxSpy: Extension updated');
     }
-  });
+});
+
+// Handle extension startup
+chrome.runtime.onStartup.addListener(() => {
+    console.log('LuxSpy: Extension started');
+});

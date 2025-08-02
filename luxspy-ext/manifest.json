@@ -1,6 +1,6 @@
 {
-  "name": "my-chrome-extension",
-  "description": "Template for a chrome extension (manifest v3)",
+  "name": "LuxSpy",
+  "description": "Monitor and analyze DOM events on AutoDarts match pages",
   "version": "1.0",
   "manifest_version": 3,
   "permissions": ["storage", "tabs"],
@@ -28,14 +28,13 @@
       "js": ["src/content/content.js"],
       "css": ["src/content/content.css"],
       "matches": [
-        "https://github.com/floholz/chrome-extension-v3-template"
+        "https://play.autodarts.io/matches/**"
       ]
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [ "assets/*" ],
-      // "extension_ids": [ "your-extension-id" ],
       "matches": [ "*://*/*" ]
     }
   ],
