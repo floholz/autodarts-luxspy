@@ -12,12 +12,13 @@ A Go web server that receives events from the LuxSpy Chrome extension and contro
 
 ## LED Color Mapping
 
-| Game State | LED Color | Description |
-|------------|-----------|-------------|
-| `ready`    | Green     | Player is ready to throw |
-| `takeout`  | Yellow    | Player needs to take out |
-| `idle`     | Off       | No active game state |
-| `error`    | Red       | Any errors or unknown states |
+| Game State | Player | LED Color | Description |
+|------------|--------|-----------|-------------|
+| `ready`    | Player 1 | Green     | Player 1 is ready to throw |
+| `ready`    | Player 2 | Purple    | Player 2 is ready to throw |
+| `takeout`  | Any     | Yellow    | Player needs to take out |
+| `idle`     | Any     | Off       | No active game state |
+| `error`    | Any     | Red       | Any errors or unknown states |
 
 ## Installation
 
@@ -90,7 +91,7 @@ Manual LED control endpoint.
 **Request Body:**
 ```json
 {
-  "action": "on|off|red|green|yellow"
+  "action": "on|off|red|green|purple|yellow"
 }
 ```
 
@@ -127,7 +128,7 @@ curl http://localhost:8080/health
 # Test manual LED control
 curl -X POST http://localhost:8080/api/led \
   -H "Content-Type: application/json" \
-  -d '{"action": "red"}'
+  -d '{"action": "purple"}'
 
 # Test event endpoint
 curl -X POST http://localhost:8080/api/event \

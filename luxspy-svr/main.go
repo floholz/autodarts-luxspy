@@ -14,6 +14,7 @@ import (
 type EventData struct {
 	Timestamp          string `json:"timestamp"`
 	PlayerName         string `json:"playerName"`
+	PlayerNumber       *int   `json:"playerNumber"`
 	GameState          string `json:"gameState"`
 	PlayerInNavigation bool   `json:"playerInNavigation"`
 	URL                string `json:"url"`
@@ -33,7 +34,8 @@ type LEDController struct {
 // LED colors based on game state
 var (
 	ColorRed    = []byte{0xFF, 0x00, 0x00} // Red for errors
-	ColorGreen  = []byte{0x00, 0xFF, 0x00} // Green for ready
+	ColorGreen  = []byte{0x00, 0xFF, 0x00} // Green for player 1 ready
+	ColorPurple = []byte{0xFF, 0x00, 0xFF} // Purple/Pink for player 2 ready
 	ColorYellow = []byte{0xFF, 0xFF, 0x00} // Yellow for takeout
 	ColorOff    = []byte{0x00, 0x00, 0x00} // Off/black
 )
@@ -90,14 +92,28 @@ func (lc *LEDController) TurnOff() error {
 	return lc.sendCommand(command)
 }
 
-// SetColorByState sets the LED color based on game state
-func (lc *LEDController) SetColorByState(gameState string) error {
+// SetColorByState sets the LED color based on game state and player number
+func (lc *LEDController) SetColorByState(gameState string, playerNumber *int) error {
 	var color []byte
 
 	switch gameState {
 	case "ready":
-		color = ColorGreen
-		log.Printf("Setting LED to GREEN (ready state)")
+		if playerNumber != nil {
+			switch *playerNumber {
+			case 1:
+				color = ColorGreen
+				log.Printf("Setting LED to GREEN (Player 1 ready)")
+			case 2:
+				color = ColorPurple
+				log.Printf("Setting LED to PURPLE (Player 2 ready)")
+			default:
+				color = ColorGreen
+				log.Printf("Setting LED to GREEN (Player %d ready)", *playerNumber)
+			}
+		} else {
+			color = ColorGreen
+			log.Printf("Setting LED to GREEN (ready state, unknown player)")
+		}
 	case "takeout":
 		color = ColorYellow
 		log.Printf("Setting LED to YELLOW (takeout state)")
@@ -144,8 +160,8 @@ func (s *Server) handleLuxSpyEvent(w http.ResponseWriter, r *http.Request) {
 	// Log the received event
 	log.Printf("Received LuxSpy event: %+v", event.Data)
 
-	// Set LED color based on game state
-	if err := s.ledController.SetColorByState(event.Data.GameState); err != nil {
+	// Set LED color based on game state and player number
+	if err := s.ledController.SetColorByState(event.Data.GameState, event.Data.PlayerNumber); err != nil {
 		log.Printf("Error setting LED color: %v", err)
 		http.Error(w, "Failed to control LED", http.StatusInternalServerError)
 		return
@@ -198,6 +214,8 @@ func (s *Server) handleLEDControl(w http.ResponseWriter, r *http.Request) {
 		err = s.ledController.SetRGBColor(ColorRed[0], ColorRed[1], ColorRed[2])
 	case "green":
 		err = s.ledController.SetRGBColor(ColorGreen[0], ColorGreen[1], ColorGreen[2])
+	case "purple":
+		err = s.ledController.SetRGBColor(ColorPurple[0], ColorPurple[1], ColorPurple[2])
 	case "yellow":
 		err = s.ledController.SetRGBColor(ColorYellow[0], ColorYellow[1], ColorYellow[2])
 	default:

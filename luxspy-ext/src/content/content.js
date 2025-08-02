@@ -8,6 +8,22 @@ function getCurrentPlayerName() {
     return playerElement?.innerText || null;
 }
 
+// Function to get current player number (1 or 2)
+function getCurrentPlayerNumber() {
+    const playerName = getCurrentPlayerName();
+    if (!playerName) return null;
+    
+    // Try to find player in the player list to determine their number
+    const playerElements = document.querySelectorAll('.ad-ext-player-name');
+    for (let i = 0; i < playerElements.length; i++) {
+        if (playerElements[i].innerText === playerName) {
+            return i + 1; // Player numbers are 1-based
+        }
+    }
+    
+    return null;
+}
+
 // Function to get game state
 function getGameState() {
     if (document.querySelector(CONFIG.SELECTORS.READY_STATE)) {
@@ -61,12 +77,14 @@ async function sendEventToServer(eventData) {
 // Function to log all monitored data
 function logMonitoredData() {
     const playerName = getCurrentPlayerName();
+    const playerNumber = getCurrentPlayerNumber();
     const gameState = getGameState();
     const playerInNav = isCurrentPlayerInNavigation();
     
     const eventData = {
         timestamp: new Date().toISOString(),
         playerName: playerName,
+        playerNumber: playerNumber,
         gameState: gameState,
         playerInNavigation: playerInNav,
         url: window.location.href

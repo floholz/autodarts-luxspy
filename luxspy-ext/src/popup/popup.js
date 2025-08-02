@@ -23,6 +23,9 @@ function updateStatusDisplay(data) {
             <strong>Player Name:</strong> ${data.playerName || 'Not found'}
         </div>
         <div class="status-item">
+            <strong>Player Number:</strong> ${data.playerNumber || 'Unknown'}
+        </div>
+        <div class="status-item">
             <strong>Game State:</strong> <span class="state-${data.gameState}">${data.gameState}</span>
         </div>
         <div class="status-item">
