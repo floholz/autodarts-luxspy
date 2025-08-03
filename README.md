@@ -16,12 +16,18 @@ LuxSpy is designed to monitor and analyze DOM events on AutoDarts match pages (`
 - Detects player names, game states, and navigation status
 - Identifies which player is currently active (Player 1 or Player 2)
 
-### 🎨 **Player-Specific LED Control**
-- **Player 1 Ready** → 🟢 Green LED
-- **Player 2 Ready** → 🟣 Purple LED  
+### 🎨 **Focus-Based LED Control**
+- **Focused Player Ready** → 🟢 Green LED
+- **Unfocused Player Ready** → 🟣 Purple LED  
 - **Takeout Required** → 🟡 Yellow LED
 - **Idle State** → ⚫ LED Off
 - **Error State** → 🔴 Red LED
+
+### 🎯 **Smart Focus Control**
+- **Auto Mode**: Automatically focuses on the logged-in player
+- **Manual Mode**: Select specific player to focus on
+- **No Focus**: Disable LED control entirely
+- **Real-time Updates**: Shows logged-in player and focus status
 
 ### 🔧 **Smart Integration**
 - Automatic event detection and LED control
@@ -70,7 +76,8 @@ The extension monitors these DOM elements:
    - `div.css-aiihgx` → "ready"
    - `div.css-3nk254` → "takeout" 
    - Neither present → "idle"
-4. **Navigation Status**: Checks if current player matches `.navigation *> img` alt text
+4. **Logged-in Player**: `.navigation *> img` alt text (current user)
+5. **Focus Control**: User-selectable focus mode and player selection
 
 ### Installation
 
@@ -85,11 +92,14 @@ The extension monitors these DOM elements:
 1. Navigate to an AutoDarts match page: `https://play.autodarts.io/matches/[match-uuid]`
 2. The extension will automatically start monitoring
 3. Watch the LED strip change colors based on game state:
-   - **Green**: Player 1 is ready to throw
-   - **Purple**: Player 2 is ready to throw
+   - **Green**: Focused player is ready to throw
+   - **Purple**: Unfocused player is ready to throw
    - **Yellow**: Someone needs to take out
    - **Off**: Waiting for next turn
-4. Click the extension icon to view current status and real-time updates
+4. Click the extension icon to view current status and configure focus controls:
+   - **Auto Mode**: Automatically focuses on the logged-in player
+   - **Manual Mode**: Select a specific player to focus on
+   - **No Focus**: Disable LED control entirely
 
 ## Go Server (`luxspy-svr/`)
 
@@ -103,13 +113,13 @@ The extension monitors these DOM elements:
 
 ### LED Color Mapping
 
-| Game State | Player | LED Color | Description |
-|------------|--------|-----------|-------------|
-| `ready`    | Player 1 | Green     | Player 1 is ready to throw |
-| `ready`    | Player 2 | Purple    | Player 2 is ready to throw |
-| `takeout`  | Any     | Yellow    | Player needs to take out |
-| `idle`     | Any     | Off       | No active game state |
-| `error`    | Any     | Red       | Any errors or unknown states |
+| Game State | Focus Status | LED Color | Description |
+|------------|--------------|-----------|-------------|
+| `ready`    | Focused      | Green     | Focused player is ready to throw |
+| `ready`    | Unfocused    | Purple    | Unfocused player is ready to throw |
+| `takeout`  | Any          | Yellow    | Player needs to take out |
+| `idle`     | Any          | Off       | No active game state |
+| `error`    | Any          | Red       | Any errors or unknown states |
 
 ### Installation
 

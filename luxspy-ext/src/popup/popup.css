@@ -27,6 +27,20 @@ body {
     opacity: 0.8;
 }
 
+.logged-in-player {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logged-in-player span {
+    opacity: 0.9;
+}
+
 .status-section {
     padding: 20px;
 }
@@ -101,6 +115,56 @@ body {
     padding: 10px;
     border-radius: 6px;
     border-left: 3px solid #fbbf24;
+}
+
+.focus-section {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.focus-section h2 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.focus-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.focus-mode, .player-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.focus-mode label, .player-selection label {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.focus-mode select, .player-selection select {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.focus-mode select:hover, .player-selection select:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.focus-mode select option, .player-selection select option {
+    background: #2d3748;
+    color: white;
 }
 
 .actions-section {

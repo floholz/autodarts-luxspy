@@ -17,6 +17,10 @@ type EventData struct {
 	PlayerNumber       *int   `json:"playerNumber"`
 	GameState          string `json:"gameState"`
 	PlayerInNavigation bool   `json:"playerInNavigation"`
+	LoggedInPlayerName string `json:"loggedInPlayerName"`
+	FocusMode          string `json:"focusMode"`
+	FocusedPlayer      string `json:"focusedPlayer"`
+	ShouldFocus        bool   `json:"shouldFocus"`
 	URL                string `json:"url"`
 }
 
@@ -92,27 +96,18 @@ func (lc *LEDController) TurnOff() error {
 	return lc.sendCommand(command)
 }
 
-// SetColorByState sets the LED color based on game state and player number
-func (lc *LEDController) SetColorByState(gameState string, playerNumber *int) error {
+// SetColorByState sets the LED color based on game state, player number, and focus status
+func (lc *LEDController) SetColorByState(gameState string, playerNumber *int, shouldFocus bool) error {
 	var color []byte
 
 	switch gameState {
 	case "ready":
-		if playerNumber != nil {
-			switch *playerNumber {
-			case 1:
-				color = ColorGreen
-				log.Printf("Setting LED to GREEN (Player 1 ready)")
-			case 2:
-				color = ColorPurple
-				log.Printf("Setting LED to PURPLE (Player 2 ready)")
-			default:
-				color = ColorGreen
-				log.Printf("Setting LED to GREEN (Player %d ready)", *playerNumber)
-			}
-		} else {
+		if shouldFocus {
 			color = ColorGreen
-			log.Printf("Setting LED to GREEN (ready state, unknown player)")
+			log.Printf("Setting LED to GREEN (focused player ready)")
+		} else {
+			color = ColorPurple
+			log.Printf("Setting LED to PURPLE (unfocused player ready)")
 		}
 	case "takeout":
 		color = ColorYellow
@@ -160,8 +155,9 @@ func (s *Server) handleLuxSpyEvent(w http.ResponseWriter, r *http.Request) {
 	// Log the received event
 	log.Printf("Received LuxSpy event: %+v", event.Data)
 
-	// Set LED color based on game state and player number
-	if err := s.ledController.SetColorByState(event.Data.GameState, event.Data.PlayerNumber); err != nil {
+	// Set LED color based on game state, player number, and focus status
+	// Always control LED - focused players get green, unfocused players get purple
+	if err := s.ledController.SetColorByState(event.Data.GameState, event.Data.PlayerNumber, event.Data.ShouldFocus); err != nil {
 		log.Printf("Error setting LED color: %v", err)
 		http.Error(w, "Failed to control LED", http.StatusInternalServerError)
 		return

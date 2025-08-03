@@ -35,16 +35,22 @@ function getGameState() {
     }
 }
 
+// Function to get logged-in player name (from navigation image alt)
+function getLoggedInPlayerName() {
+    const navigationImg = document.querySelector(CONFIG.SELECTORS.NAVIGATION_IMG);
+    return navigationImg?.alt || null;
+}
+
 // Function to check if current player is in navigation
 function isCurrentPlayerInNavigation() {
     const currentPlayerName = getCurrentPlayerName();
-    const navigationImg = document.querySelector(CONFIG.SELECTORS.NAVIGATION_IMG);
+    const loggedInPlayerName = getLoggedInPlayerName();
     
-    if (!currentPlayerName || !navigationImg) {
+    if (!currentPlayerName || !loggedInPlayerName) {
         return false;
     }
     
-    return navigationImg.alt === currentPlayerName;
+    return loggedInPlayerName === currentPlayerName;
 }
 
 // Function to send event to LuxSpy server
@@ -80,33 +86,55 @@ function logMonitoredData() {
     const playerNumber = getCurrentPlayerNumber();
     const gameState = getGameState();
     const playerInNav = isCurrentPlayerInNavigation();
+    const loggedInPlayerName = getLoggedInPlayerName();
     
-    const eventData = {
-        timestamp: new Date().toISOString(),
-        playerName: playerName,
-        playerNumber: playerNumber,
-        gameState: gameState,
-        playerInNavigation: playerInNav,
-        url: window.location.href
-    };
-    
-    console.log('LuxSpy Event:', eventData);
-    
-    // Broadcast event to any listening popups
-    chrome.runtime.sendMessage({
-        action: 'luxspyEvent',
-        data: eventData
-    }).catch(error => {
-        // Ignore connection errors when no popup is open
-        if (error.message.includes('Receiving end does not exist')) {
-            // This is expected when no popup is listening
-            return;
+    // Get focus preference from storage
+    chrome.storage.local.get(['focusMode', 'focusedPlayer'], (result) => {
+        const focusMode = result.focusMode || 'auto'; // 'auto', 'manual', 'none'
+        const focusedPlayer = result.focusedPlayer || null;
+        
+        // Determine if we should focus on this player
+        let shouldFocus = false;
+        if (focusMode === 'auto') {
+            // Auto mode: focus if logged-in player is playing
+            shouldFocus = loggedInPlayerName === playerName;
+        } else if (focusMode === 'manual') {
+            // Manual mode: focus on selected player
+            shouldFocus = focusedPlayer === playerName;
         }
-        console.error('LuxSpy: Error sending message:', error);
-    });
+        // 'none' mode: don't focus on any player
+        
+        const eventData = {
+            timestamp: new Date().toISOString(),
+            playerName: playerName,
+            playerNumber: playerNumber,
+            gameState: gameState,
+            playerInNavigation: playerInNav,
+            loggedInPlayerName: loggedInPlayerName,
+            focusMode: focusMode,
+            focusedPlayer: focusedPlayer,
+            shouldFocus: shouldFocus,
+            url: window.location.href
+        };
+        
+        console.log('LuxSpy Event:', eventData);
+        
+        // Broadcast event to any listening popups
+        chrome.runtime.sendMessage({
+            action: 'luxspyEvent',
+            data: eventData
+        }).catch(error => {
+            // Ignore connection errors when no popup is open
+            if (error.message.includes('Receiving end does not exist')) {
+                // This is expected when no popup is listening
+                return;
+            }
+            console.error('LuxSpy: Error sending message:', error);
+        });
 
-    // Send event to LuxSpy server
-    sendEventToServer(eventData);
+        // Send event to LuxSpy server
+        sendEventToServer(eventData);
+    });
 }
 
 // Initial log
@@ -161,21 +189,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const playerName = getCurrentPlayerName();
         const gameState = getGameState();
         const playerInNav = isCurrentPlayerInNavigation();
+        const loggedInPlayerName = getLoggedInPlayerName();
         
-        sendResponse({
-            success: true,
-            data: {
-                playerName: playerName,
-                gameState: gameState,
-                playerInNavigation: playerInNav,
-                url: window.location.href,
-                timestamp: new Date().toISOString()
-            }
+        // Get focus settings
+        chrome.storage.local.get(['focusMode', 'focusedPlayer'], (result) => {
+            const focusMode = result.focusMode || 'auto';
+            const focusedPlayer = result.focusedPlayer || null;
+            
+            sendResponse({
+                success: true,
+                data: {
+                    playerName: playerName,
+                    gameState: gameState,
+                    playerInNavigation: playerInNav,
+                    loggedInPlayerName: loggedInPlayerName,
+                    focusMode: focusMode,
+                    focusedPlayer: focusedPlayer,
+                    url: window.location.href,
+                    timestamp: new Date().toISOString()
+                }
+            });
         });
+        
+        return true; // Keep the message channel open for async response
     } else if (request.action === 'clearLogs') {
         console.clear();
         console.log('LuxSpy: Console logs cleared');
         sendResponse({ success: true });
+    } else if (request.action === 'getPlayers') {
+        // Get all players in the match
+        const playerElements = document.querySelectorAll('.ad-ext-player-name');
+        const players = Array.from(playerElements).map((el, index) => ({
+            name: el.innerText,
+            number: index + 1
+        }));
+        
+        sendResponse({
+            success: true,
+            players: players
+        });
     }
     
     return true; // Keep the message channel open for async response

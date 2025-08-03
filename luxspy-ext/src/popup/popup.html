@@ -7,12 +7,35 @@
         <div class="header">
             <h1>LuxSpy</h1>
             <p>AutoDarts Match Monitor</p>
+            <div class="logged-in-player" id="logged-in-player">
+                <span>Loading...</span>
+            </div>
         </div>
         
         <div class="status-section">
             <h2>Current Status <div id="update-indicator" class="update-indicator"></div></h2>
             <div id="status-content">
                 <p>Loading...</p>
+            </div>
+        </div>
+        
+        <div class="focus-section">
+            <h2>Focus Control</h2>
+            <div class="focus-controls">
+                <div class="focus-mode">
+                    <label>Focus Mode:</label>
+                    <select id="focus-mode-select">
+                        <option value="auto">Auto (Logged-in Player)</option>
+                        <option value="manual">Manual Selection</option>
+                        <option value="none">No Focus</option>
+                    </select>
+                </div>
+                <div class="player-selection" id="player-selection" style="display: none;">
+                    <label>Focus on Player:</label>
+                    <select id="player-select">
+                        <option value="">Select Player</option>
+                    </select>
+                </div>
             </div>
         </div>
         
