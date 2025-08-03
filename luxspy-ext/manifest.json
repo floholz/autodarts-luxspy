@@ -26,7 +26,7 @@
   },
   "content_scripts": [
     {
-      "js": ["src/config.js", "src/content/content.js"],
+      "js": ["src/config.js", "src/utils.js", "src/content/content.js"],
       "css": ["src/content/content.css"],
       "matches": [
         "https://play.autodarts.io/*"

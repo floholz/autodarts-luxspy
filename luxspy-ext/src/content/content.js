@@ -4,8 +4,7 @@ console.log('LuxSpy: Content script loaded on AutoDarts page');
 
 // Function to get current player name
 function getCurrentPlayerName() {
-    const playerElement = document.querySelector(CONFIG.SELECTORS.PLAYER_NAME);
-    return playerElement?.innerText || null;
+    return evaluateSelector(CONFIG.SELECTORS.PLAYER_NAME);
 }
 
 // Function to get current player number (1 or 2)
@@ -26,9 +25,9 @@ function getCurrentPlayerNumber() {
 
 // Function to get game state
 function getGameState() {
-    if (document.querySelector(CONFIG.SELECTORS.READY_STATE)) {
+    if (evaluateSelector(CONFIG.SELECTORS.READY_STATE)) {
         return 'ready';
-    } else if (document.querySelector(CONFIG.SELECTORS.TAKEOUT_STATE)) {
+    } else if (evaluateSelector(CONFIG.SELECTORS.TAKEOUT_STATE)) {
         return 'takeout';
     } else {
         return 'idle';
@@ -37,8 +36,7 @@ function getGameState() {
 
 // Function to get logged-in player name (from navigation image alt)
 function getLoggedInPlayerName() {
-    const navigationImg = document.querySelector(CONFIG.SELECTORS.NAVIGATION_IMG);
-    return navigationImg?.alt || null;
+    return evaluateSelector(CONFIG.SELECTORS.NAVIGATION_IMG);
 }
 
 // Function to check if current player is in navigation
