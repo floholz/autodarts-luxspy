@@ -184,6 +184,8 @@ body {
 .settings-section {
     padding: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
 }
 
 .settings-section:last-of-type {
@@ -302,12 +304,14 @@ body {
 }
 
 .actions-section {
+    margin-top: 20px;
     padding: 0 20px 20px 20px;
     display: flex;
     gap: 10px;
 }
 
-.actions-section button {
+.actions-section button,
+.action-button {
     flex: 1;
     padding: 10px 15px;
     background: rgba(255, 255, 255, 0.2);
@@ -318,6 +322,10 @@ body {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.action-button.hidden {
+    display: none;
 }
 
 .actions-section button:hover {
@@ -339,6 +347,12 @@ body {
     text-align: center;
 }
 
+/* When message appears in settings section, adjust styling */
+.settings-section .message {
+    margin: 0;
+    text-align: left;
+}
+
 .message.success {
     background: rgba(74, 222, 128, 0.2);
     border: 1px solid rgba(74, 222, 128, 0.3);
@@ -349,4 +363,10 @@ body {
     background: rgba(248, 113, 113, 0.2);
     border: 1px solid rgba(248, 113, 113, 0.3);
     color: #f87171;
+}
+
+.message.loading {
+    background: rgba(193, 59, 246, 0.2);
+    border: 1px solid rgba(193, 59, 246, 0.3);
+    color: #ff85ff;
 }

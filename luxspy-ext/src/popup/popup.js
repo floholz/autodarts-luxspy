@@ -37,7 +37,9 @@ function isAutoDartsMatchPage(url) {
 }
 
 // Function to show a message
-function showMessage(message, type = 'success') {
+function showMessage(message, options = {}) {
+    const { type = 'success', target = null, onShow, onClose } = options;
+    
     // Remove existing messages
     const existingMessages = document.querySelectorAll('.message');
     existingMessages.forEach(msg => msg.remove());
@@ -47,13 +49,26 @@ function showMessage(message, type = 'success') {
     messageElement.className = `message ${type}`;
     messageElement.textContent = message;
     
-    // Add to current page
-    const currentPage = document.querySelector('.page.active');
-    currentPage.appendChild(messageElement);
+    // If target element is specified, insert after it, otherwise add to current page
+    if (target) {
+        target.parentNode.insertBefore(messageElement, target.nextSibling);
+    } else {
+        const currentPage = document.querySelector('.page.active');
+        currentPage.appendChild(messageElement);
+    }
+    
+    // Call onShow callback if provided
+    if (onShow) {
+        onShow(messageElement);
+    }
     
     // Auto-remove after 3 seconds
     setTimeout(() => {
+        // Call onClose callback if provided
         messageElement.remove();
+        if (onClose) {
+            onClose(target);
+        }
     }, 3000);
 }
 
@@ -72,7 +87,7 @@ function switchPage(pageId) {
 async function togglePause() {
     const tab = await getCurrentTab();
     if (!tab || !isAutoDartsPage(tab.url)) {
-        showMessage('Not on an AutoDarts page', 'error');
+        showMessage('Not on an AutoDarts page', { type: 'error' });
         return;
     }
 
@@ -94,14 +109,14 @@ async function togglePause() {
         });
         
         // Show feedback message
-        showMessage(`Monitoring ${isPaused ? 'paused' : 'resumed'}`, 'success');
+        showMessage(`Monitoring ${isPaused ? 'paused' : 'resumed'}`, { type: 'success' });
         
         // Refresh status display to show updated state
         await updateStatus();
         
     } catch (error) {
         console.error('LuxSpy: Failed to toggle pause state:', error);
-        showMessage('Failed to toggle pause state', 'error');
+        showMessage('Failed to toggle pause state', { type: 'error' });
     }
 }
 
@@ -272,7 +287,7 @@ function saveSettings() {
         focusMode: focusMode,
         focusedPlayer: focusedPlayer
     }, () => {
-        showMessage('Settings saved successfully!');
+        showMessage('Settings saved successfully!', {});
         console.log('LuxSpy: Settings saved');
     });
 }
@@ -297,20 +312,28 @@ function loadSettings() {
 async function testConnection() {
     const serverAddress = serverAddressInput.value.trim();
     if (!serverAddress) {
-        showMessage('Please enter a server address', 'error');
+        showMessage('Please enter a server address', { type: 'error', target: testConnectionBtn });
         return;
     }
     
+    // Show loading message immediately
+    testConnectionBtn.classList.add('hidden');
+    showMessage('Testing connection...', { type: 'loading', target: testConnectionBtn });
+    
+    const onClose = () => {
+        testConnectionBtn.classList.remove('hidden');
+    }
+
     try {
         const response = await fetch(`${serverAddress}/health`);
         if (response.ok) {
             const data = await response.json();
-            showMessage(`Connection successful! Server: ${data.service}`, 'success');
+            showMessage(`Connection successful! Server: ${data.service}`, { type: 'success', target: testConnectionBtn, onClose: onClose });
         } else {
-            showMessage(`Server responded with status: ${response.status}`, 'error');
+            showMessage(`Server responded with status: ${response.status}`, { type: 'error', target: testConnectionBtn, onClose: onClose });
         }
     } catch (error) {
-        showMessage(`Connection failed: ${error.message}`, 'error');
+        showMessage(`Connection failed: ${error.message}`, { type: 'error', target: testConnectionBtn, onClose: onClose });
     }
 }
 
