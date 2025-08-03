@@ -12,13 +12,17 @@ A Go web server that receives events from the LuxSpy Chrome extension and contro
 
 ## LED Color Mapping
 
-| Game State | Player | LED Color | Description |
-|------------|--------|-----------|-------------|
-| `ready`    | Player 1 | Green     | Player 1 is ready to throw |
-| `ready`    | Player 2 | Purple    | Player 2 is ready to throw |
-| `takeout`  | Any     | Yellow    | Player needs to take out |
-| `idle`     | Any     | Off       | No active game state |
-| `error`    | Any     | Red       | Any errors or unknown states |
+| Game State | Focus Status | LED Color | Description |
+|------------|--------------|-----------|-------------|
+| `ready`    | Focused      | Green     | Focused player is ready to throw |
+| `ready`    | Unfocused    | Purple    | Unfocused player is ready to throw |
+| `takeout`  | Any          | Yellow    | Player needs to take out |
+| `idle`     | Any          | Off       | No active game state |
+| `error`    | Any          | Red       | Any errors or unknown states |
+
+**Focus Logic:**
+- If the logged-in player is in the match: they get green, other player gets purple
+- If the logged-in player is not in the match (watch mode): first player gets green, second player gets purple
 
 ## Installation
 

@@ -6,8 +6,10 @@ A Chrome extension that monitors and analyzes DOM events on AutoDarts match page
 
 - **Real-time Monitoring**: Continuously monitors DOM changes on AutoDarts match pages
 - **Event Detection**: Tracks player names, game states, and navigation status
+- **Smart Focus Logic**: Automatically determines LED colors based on logged-in player presence
+- **Server Communication**: Sends events to Go server for LED control
+- **Status Popup**: Shows current monitoring status and server configuration
 - **Console Logging**: Logs all detected events to the browser console
-- **Status Popup**: Shows current monitoring status in the extension popup
 
 ## Monitored Elements
 
@@ -30,10 +32,15 @@ The extension monitors these DOM elements:
 
 ## Usage
 
-1. Navigate to an AutoDarts match page: `https://play.autodarts.io/matches/[match-uuid]`
+1. Navigate to any AutoDarts page: `https://play.autodarts.io/*`
 2. The extension will automatically start monitoring
-3. Open the browser console to see logged events
-4. Click the extension icon to view current status
+3. **On Match Pages**: Watch the LED strip change colors based on game state:
+   - **Green**: Focused player is ready to throw
+   - **Purple**: Unfocused player is ready to throw
+   - **Yellow**: Someone needs to take out
+   - **Off**: Waiting for next turn
+4. **On Other Pages**: The extension tracks the logged-in player but doesn't control LEDs
+5. Click the extension icon to view current status and configure server settings
 
 ## Development
 
@@ -59,8 +66,8 @@ luxspy-ext/
 
 ## Future Enhancements
 
-- Send events to a server for further processing
 - Add configuration options for monitoring preferences
 - Implement event filtering and aggregation
 - Add visual indicators on the match page
+- Export functionality for event data
 

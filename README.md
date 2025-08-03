@@ -17,18 +17,17 @@ LuxSpy is designed to monitor and analyze DOM events on AutoDarts pages (`https:
 - Identifies which player is currently active (Player 1 or Player 2)
 - Always tracks logged-in player from any AutoDarts page
 
-### 🎨 **Focus-Based LED Control**
-- **Focused Player Ready** → 🟢 Green LED
-- **Unfocused Player Ready** → 🟣 Purple LED  
+### 🎨 **Smart LED Control**
+- **Focused Player Ready** → 🟢 Green LED (logged-in player or first player in watch mode)
+- **Unfocused Player Ready** → 🟣 Purple LED (other player or second player in watch mode)
 - **Takeout Required** → 🟡 Yellow LED
 - **Idle State** → ⚫ LED Off
 - **Error State** → 🔴 Red LED
 
 ### 🎯 **Smart Focus Control**
-- **Auto Mode**: Automatically focuses on the logged-in player
-- **Manual Mode**: Select specific player to focus on
-- **No Focus**: Disable LED control entirely
-- **Real-time Updates**: Shows logged-in player and focus status
+- **If logged-in player is in the match**: They get green color, other player gets purple
+- **If logged-in player is not in the match (watch mode)**: First player gets green, second player gets purple
+- **Consistent colors throughout the match**, even when players switch sides
 
 ### 🔧 **Smart Integration**
 - Automatic event detection and LED control
@@ -78,7 +77,7 @@ The extension monitors these DOM elements:
    - `div.css-3nk254` → "takeout" (match pages only)
    - Neither present → "idle"
 4. **Logged-in Player**: `.navigation *> img` alt text (all AutoDarts pages)
-5. **Focus Control**: User-selectable focus mode and player selection
+5. **Focus Control**: Automatic focus based on logged-in player presence in match
 
 ### Installation
 
@@ -98,10 +97,7 @@ The extension monitors these DOM elements:
    - **Yellow**: Someone needs to take out
    - **Off**: Waiting for next turn
 4. **On Other Pages**: The extension tracks the logged-in player but doesn't control LEDs
-5. Click the extension icon to view current status and configure focus controls:
-   - **Auto Mode**: Automatically focuses on the logged-in player
-   - **Manual Mode**: Select a specific player to focus on
-   - **No Focus**: Disable LED control entirely
+5. Click the extension icon to view current status and server configuration
 
 ## Go Server (`luxspy-svr/`)
 
