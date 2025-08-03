@@ -13,9 +13,9 @@ function getCurrentPlayerNumber() {
     if (!playerName) return null;
     
     // Try to find player in the player list to determine their number
-    const playerElements = document.querySelectorAll('.ad-ext-player-name');
-    for (let i = 0; i < playerElements.length; i++) {
-        if (playerElements[i].innerText === playerName) {
+    const playerNames = evaluateSelectorAll(CONFIG.SELECTORS.ALL_PLAYER_NAMES);
+    for (let i = 0; i < playerNames.length; i++) {
+        if (playerNames[i] === playerName) {
             return i + 1; // Player numbers are 1-based
         }
     }
@@ -173,16 +173,16 @@ const observer = new MutationObserver((mutations) => {
             const target = mutation.target;
             
             // Always log if navigation image changes (logged-in player)
-            if (target.matches?.('.navigation *> img')) {
+            if (target.matches?.(CONFIG.SELECTORS.NAVIGATION_IMG.selector)) {
                 shouldLog = true;
             }
             
             // Only log match-specific changes if we're on a match page
             if (isMatchPage()) {
-                if (target.matches?.('.ad-ext-player-active *> .ad-ext-player-name') ||
-                    target.matches?.('div.css-aiihgx') ||
-                    target.matches?.('div.css-3nk254') ||
-                    target.closest?.('.ad-ext-player-active')) {
+                if (target.matches?.(CONFIG.SELECTORS.PLAYER_NAME.selector) ||
+                    target.matches?.(CONFIG.SELECTORS.READY_STATE.selector) ||
+                    target.matches?.(CONFIG.SELECTORS.TAKEOUT_STATE.selector) ||
+                    target.closest?.(CONFIG.SELECTORS.ACTIVE_PLAYER_CONTAINER.selector)) {
                     shouldLog = true;
                 }
             }
@@ -251,9 +251,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === 'getPlayers') {
         // Only get players if we're on a match page
         if (isMatchPage()) {
-            const playerElements = document.querySelectorAll('.ad-ext-player-name');
-            const players = Array.from(playerElements).map((el, index) => ({
-                name: el.innerText,
+            const playerNames = evaluateSelectorAll(CONFIG.SELECTORS.ALL_PLAYER_NAMES);
+            const players = playerNames.map((name, index) => ({
+                name: name,
                 number: index + 1
             }));
             

@@ -39,6 +39,15 @@ const CONFIG = {
         NAVIGATION_IMG: {
             selector: '.navigation *> img', 
             evaluator: 'alt'
+        },
+        /** @type {SelectorEvaluator} All player names selector - for getting player list */
+        ALL_PLAYER_NAMES: {
+            selector: '.ad-ext-player-name',
+            evaluator: 'innerText'
+        },
+        /** @type {SelectorEvaluator} Active player container - for existence checks */
+        ACTIVE_PLAYER_CONTAINER: {
+            selector: '.ad-ext-player-active'
         }
     }
 };
