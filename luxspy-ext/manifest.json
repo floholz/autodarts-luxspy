@@ -29,7 +29,7 @@
       "js": ["src/config.js", "src/content/content.js"],
       "css": ["src/content/content.css"],
       "matches": [
-        "https://play.autodarts.io/matches/**"
+        "https://play.autodarts.io/*"
       ]
     }
   ],

@@ -4,7 +4,7 @@ A comprehensive monitoring system for AutoDarts match pages that combines a Chro
 
 ## Overview
 
-LuxSpy is designed to monitor and analyze DOM events on AutoDarts match pages (`https://play.autodarts.io/matches/:match_uuid`) and provide real-time visual feedback through LED strip control. The system consists of two main components:
+LuxSpy is designed to monitor and analyze DOM events on AutoDarts pages (`https://play.autodarts.io/*`) and provide real-time visual feedback through LED strip control. The system consists of two main components:
 
 - **Chrome Extension** (`luxspy-ext/`): Monitors DOM changes in real-time and detects player states
 - **Go Server** (`luxspy-svr/`): Processes events and controls RGB LED strips via TCP protocol
@@ -12,9 +12,10 @@ LuxSpy is designed to monitor and analyze DOM events on AutoDarts match pages (`
 ## Features
 
 ### 🎯 **Real-time Game State Monitoring**
-- Monitors AutoDarts match pages automatically
+- Monitors AutoDarts pages automatically (match pages and general site)
 - Detects player names, game states, and navigation status
 - Identifies which player is currently active (Player 1 or Player 2)
+- Always tracks logged-in player from any AutoDarts page
 
 ### 🎨 **Focus-Based LED Control**
 - **Focused Player Ready** → 🟢 Green LED
@@ -70,13 +71,13 @@ autodarts-luxspy/
 
 The extension monitors these DOM elements:
 
-1. **Current Player**: `.ad-ext-player-active *> .ad-ext-player-name`
-2. **Player Number**: Determined by position in player list
+1. **Current Player**: `.ad-ext-player-active *> .ad-ext-player-name` (match pages only)
+2. **Player Number**: Determined by position in player list (match pages only)
 3. **Game State**: 
-   - `div.css-aiihgx` → "ready"
-   - `div.css-3nk254` → "takeout" 
+   - `div.css-aiihgx` → "ready" (match pages only)
+   - `div.css-3nk254` → "takeout" (match pages only)
    - Neither present → "idle"
-4. **Logged-in Player**: `.navigation *> img` alt text (current user)
+4. **Logged-in Player**: `.navigation *> img` alt text (all AutoDarts pages)
 5. **Focus Control**: User-selectable focus mode and player selection
 
 ### Installation
@@ -89,14 +90,15 @@ The extension monitors these DOM elements:
 
 ### Usage
 
-1. Navigate to an AutoDarts match page: `https://play.autodarts.io/matches/[match-uuid]`
+1. Navigate to any AutoDarts page: `https://play.autodarts.io/*`
 2. The extension will automatically start monitoring
-3. Watch the LED strip change colors based on game state:
+3. **On Match Pages**: Watch the LED strip change colors based on game state:
    - **Green**: Focused player is ready to throw
    - **Purple**: Unfocused player is ready to throw
    - **Yellow**: Someone needs to take out
    - **Off**: Waiting for next turn
-4. Click the extension icon to view current status and configure focus controls:
+4. **On Other Pages**: The extension tracks the logged-in player but doesn't control LEDs
+5. Click the extension icon to view current status and configure focus controls:
    - **Auto Mode**: Automatically focuses on the logged-in player
    - **Manual Mode**: Select a specific player to focus on
    - **No Focus**: Disable LED control entirely
@@ -175,8 +177,9 @@ go run main.go
 - Load unpacked: `luxspy-ext/`
 
 ### 3. Test the System
-- Navigate to an AutoDarts match page
-- Watch the LED strip change colors based on game state
+- Navigate to any AutoDarts page
+- On match pages: Watch the LED strip change colors based on game state
+- On other pages: Check that logged-in player is detected
 - Check server logs for event processing
 
 ## Development Setup

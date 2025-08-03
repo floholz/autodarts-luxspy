@@ -1,6 +1,6 @@
-// LuxSpy Content Script - Monitor AutoDarts match page events
+// LuxSpy Content Script - Monitor AutoDarts events
 
-console.log('LuxSpy: Content script loaded on AutoDarts match page');
+console.log('LuxSpy: Content script loaded on AutoDarts page');
 
 // Function to get current player name
 function getCurrentPlayerName() {
@@ -86,13 +86,21 @@ async function sendEventToServer(eventData) {
     });
 }
 
+// Function to check if we're on a match page
+function isMatchPage() {
+    return window.location.href.match(/^https:\/\/play\.autodarts\.io\/matches\/[a-f0-9-]+$/);
+}
+
 // Function to log all monitored data
 function logMonitoredData() {
-    const playerName = getCurrentPlayerName();
-    const playerNumber = getCurrentPlayerNumber();
-    const gameState = getGameState();
-    const playerInNav = isCurrentPlayerInNavigation();
     const loggedInPlayerName = getLoggedInPlayerName();
+    const isMatch = isMatchPage();
+    
+    // Only get match-specific data if we're on a match page
+    const playerName = isMatch ? getCurrentPlayerName() : null;
+    const playerNumber = isMatch ? getCurrentPlayerNumber() : null;
+    const gameState = isMatch ? getGameState() : 'idle';
+    const playerInNav = isMatch ? isCurrentPlayerInNavigation() : false;
     
     // Get focus preference from storage
     chrome.storage.local.get(['focusMode', 'focusedPlayer'], (result) => {
@@ -101,14 +109,14 @@ function logMonitoredData() {
         
         // Determine if we should focus on this player
         let shouldFocus = false;
-        if (focusMode === 'auto') {
+        if (isMatch && focusMode === 'auto') {
             // Auto mode: focus if logged-in player is playing
             shouldFocus = loggedInPlayerName === playerName;
-        } else if (focusMode === 'manual') {
+        } else if (isMatch && focusMode === 'manual') {
             // Manual mode: focus on selected player
             shouldFocus = focusedPlayer === playerName;
         }
-        // 'none' mode: don't focus on any player
+        // 'none' mode or not on match page: don't focus on any player
         
         const eventData = {
             timestamp: new Date().toISOString(),
@@ -120,7 +128,8 @@ function logMonitoredData() {
             focusMode: focusMode,
             focusedPlayer: focusedPlayer,
             shouldFocus: shouldFocus,
-            url: window.location.href
+            url: window.location.href,
+            isMatchPage: isMatch
         };
         
         console.log('LuxSpy Event:', eventData);
@@ -138,8 +147,10 @@ function logMonitoredData() {
             console.error('LuxSpy: Error sending message:', error);
         });
 
-        // Send event to LuxSpy server
-        sendEventToServer(eventData);
+        // Only send event to server if we're on a match page
+        if (isMatch) {
+            sendEventToServer(eventData);
+        }
     });
 }
 
@@ -155,14 +166,19 @@ const observer = new MutationObserver((mutations) => {
         if (mutation.type === 'childList' || mutation.type === 'attributes') {
             const target = mutation.target;
             
-            // Check if the mutation affects any of our monitored selectors
-            if (target.matches?.('.ad-ext-player-active *> .ad-ext-player-name') ||
-                target.matches?.('div.css-aiihgx') ||
-                target.matches?.('div.css-3nk254') ||
-                target.matches?.('.navigation *> img') ||
-                target.closest?.('.ad-ext-player-active') ||
-                target.closest?.('.navigation')) {
+            // Always log if navigation image changes (logged-in player)
+            if (target.matches?.('.navigation *> img')) {
                 shouldLog = true;
+            }
+            
+            // Only log match-specific changes if we're on a match page
+            if (isMatchPage()) {
+                if (target.matches?.('.ad-ext-player-active *> .ad-ext-player-name') ||
+                    target.matches?.('div.css-aiihgx') ||
+                    target.matches?.('div.css-3nk254') ||
+                    target.closest?.('.ad-ext-player-active')) {
+                    shouldLog = true;
+                }
             }
         }
     });
@@ -192,10 +208,13 @@ document.addEventListener('visibilitychange', () => {
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getStatus') {
-        const playerName = getCurrentPlayerName();
-        const gameState = getGameState();
-        const playerInNav = isCurrentPlayerInNavigation();
         const loggedInPlayerName = getLoggedInPlayerName();
+        const isMatch = isMatchPage();
+        
+        // Only get match-specific data if we're on a match page
+        const playerName = isMatch ? getCurrentPlayerName() : null;
+        const gameState = isMatch ? getGameState() : 'idle';
+        const playerInNav = isMatch ? isCurrentPlayerInNavigation() : false;
         
         // Get focus settings
         chrome.storage.local.get(['focusMode', 'focusedPlayer'], (result) => {
@@ -212,7 +231,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     focusMode: focusMode,
                     focusedPlayer: focusedPlayer,
                     url: window.location.href,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    isMatchPage: isMatch
                 }
             });
         });
@@ -223,17 +243,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.log('LuxSpy: Console logs cleared');
         sendResponse({ success: true });
     } else if (request.action === 'getPlayers') {
-        // Get all players in the match
-        const playerElements = document.querySelectorAll('.ad-ext-player-name');
-        const players = Array.from(playerElements).map((el, index) => ({
-            name: el.innerText,
-            number: index + 1
-        }));
-        
-        sendResponse({
-            success: true,
-            players: players
-        });
+        // Only get players if we're on a match page
+        if (isMatchPage()) {
+            const playerElements = document.querySelectorAll('.ad-ext-player-name');
+            const players = Array.from(playerElements).map((el, index) => ({
+                name: el.innerText,
+                number: index + 1
+            }));
+            
+            sendResponse({
+                success: true,
+                players: players
+            });
+        } else {
+            sendResponse({
+                success: false,
+                message: 'Not on a match page'
+            });
+        }
     }
     
     return true; // Keep the message channel open for async response

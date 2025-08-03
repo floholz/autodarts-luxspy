@@ -25,6 +25,11 @@ async function getCurrentTab() {
     return tab;
 }
 
+// Function to check if the current page is an AutoDarts page
+function isAutoDartsPage(url) {
+    return url && url.startsWith('https://play.autodarts.io/');
+}
+
 // Function to check if the current page is an AutoDarts match
 function isAutoDartsMatchPage(url) {
     return url && url.match(/^https:\/\/play\.autodarts\.io\/matches\/[a-f0-9-]+$/);
@@ -76,26 +81,46 @@ function updateStatusDisplay(data) {
         ? `${data.playerName} (Player ${data.playerNumber})`
         : data.playerName || 'Not found';
     
-    statusContent.innerHTML = `
-        <div class="status-item">
-            <strong>Active Player:</strong> ${playerInfo}
-        </div>
-        <div class="status-item">
-            <strong>Game State:</strong> <span class="state-${data.gameState}">${data.gameState}</span>
-        </div>
-        <div class="status-item">
-            <strong>Focus Mode:</strong> ${data.focusMode || 'auto'}
-        </div>
-        <div class="status-item">
-            <strong>Should Focus:</strong> ${data.shouldFocus ? 'Yes' : 'No'}
-        </div>
-        <div class="status-item">
-            <strong>Match URL:</strong> ${data.url}
-        </div>
-        <div class="status-item">
+    // Build status content based on whether we're on a match page
+    let statusItems = [
+        `<div class="status-item">
+            <strong>Page Type:</strong> ${data.isMatchPage ? 'Match Page' : 'AutoDarts Page'}
+        </div>`
+    ];
+    
+    if (data.isMatchPage) {
+        statusItems.push(
+            `<div class="status-item">
+                <strong>Active Player:</strong> ${playerInfo}
+            </div>`,
+            `<div class="status-item">
+                <strong>Game State:</strong> <span class="state-${data.gameState}">${data.gameState}</span>
+            </div>`,
+            `<div class="status-item">
+                <strong>Focus Mode:</strong> ${data.focusMode || 'auto'}
+            </div>`,
+            `<div class="status-item">
+                <strong>Should Focus:</strong> ${data.shouldFocus ? 'Yes' : 'No'}
+            </div>`
+        );
+    } else {
+        statusItems.push(
+            `<div class="status-item">
+                <strong>Status:</strong> <span class="state-idle">Monitoring AutoDarts site</span>
+            </div>`
+        );
+    }
+    
+    statusItems.push(
+        `<div class="status-item">
+            <strong>Current URL:</strong> ${data.url}
+        </div>`,
+        `<div class="status-item">
             <strong>Last Updated:</strong> ${data.timestamp}
-        </div>
-    `;
+        </div>`
+    );
+    
+    statusContent.innerHTML = statusItems.join('');
 }
 
 // Function to update status display
@@ -108,13 +133,13 @@ async function updateStatus() {
         return;
     }
     
-    if (!isAutoDartsMatchPage(tab.url)) {
+    if (!isAutoDartsPage(tab.url)) {
         statusContent.innerHTML = `
-            <p class="warning">Not on an AutoDarts match page</p>
+            <p class="warning">Not on an AutoDarts page</p>
             <p>Current URL: ${tab.url || 'Unknown'}</p>
-            <p>Navigate to a match page to start monitoring</p>
+            <p>Navigate to play.autodarts.io to start monitoring</p>
         `;
-        loggedInPlayerElement.innerHTML = '<span>👤 Not on match page</span>';
+        loggedInPlayerElement.innerHTML = '<span>👤 Not on AutoDarts</span>';
         return;
     }
     
@@ -138,7 +163,7 @@ async function updateStatus() {
 // Function to load players from the match
 async function loadPlayers() {
     const tab = await getCurrentTab();
-    if (tab && isAutoDartsMatchPage(tab.url)) {
+    if (tab && isAutoDartsPage(tab.url)) {
         try {
             const response = await chrome.tabs.sendMessage(tab.id, { action: 'getPlayers' });
             if (response && response.success && response.players) {
@@ -152,9 +177,13 @@ async function loadPlayers() {
                     option.textContent = `${player.name} (Player ${player.number})`;
                     playerSelect.appendChild(option);
                 });
+            } else if (response && !response.success) {
+                // Not on a match page, clear player selection
+                playerSelect.innerHTML = '<option value="">No players available (not on match page)</option>';
             }
         } catch (error) {
             console.error('LuxSpy: Failed to load players:', error);
+            playerSelect.innerHTML = '<option value="">Error loading players</option>';
         }
     }
 }
@@ -215,7 +244,7 @@ async function testConnection() {
 // Function to clear console logs
 async function clearConsoleLogs() {
     const tab = await getCurrentTab();
-    if (tab && isAutoDartsMatchPage(tab.url)) {
+    if (tab && isAutoDartsPage(tab.url)) {
         try {
             await chrome.tabs.sendMessage(tab.id, { action: 'clearLogs' });
             console.log('LuxSpy: Console logs cleared');
