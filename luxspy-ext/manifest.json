@@ -6,10 +6,10 @@
   "permissions": ["storage", "tabs"],
   "host_permissions": ["http://localhost:8080/*"],
   "icons": {
-    "16": "images/luxspy-logo-v0-16.png",
-    "32": "images/luxspy-logo-v0-32.png",
-    "48": "images/luxspy-logo-v0-48.png",
-    "128": "images/luxspy-logo-v0-128.png"
+    "16": "images/luxspy-icon-16.png",
+    "32": "images/luxspy-icon-32.png",
+    "48": "images/luxspy-icon-48.png",
+    "128": "images/luxspy-icon-128.png"
   },
   "background": {
     "service_worker": "src/background/background.js",
@@ -18,10 +18,10 @@
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
-      "16": "images/luxspy-logo-v0-16.png",
-      "32": "images/luxspy-logo-v0-32.png",
-      "48": "images/luxspy-logo-v0-48.png",
-      "128": "images/luxspy-logo-v0-128.png"
+      "16": "images/luxspy-icon-16.png",
+      "32": "images/luxspy-icon-32.png",
+      "48": "images/luxspy-icon-48.png",
+      "128": "images/luxspy-icon-128.png"
     }
   },
   "content_scripts": [
