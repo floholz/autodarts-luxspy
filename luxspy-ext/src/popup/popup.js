@@ -1,13 +1,23 @@
 // LuxSpy Popup Script
 
+// Main page elements
 const statusContent = document.getElementById('status-content');
 const refreshBtn = document.getElementById('refresh-btn');
 const clearLogsBtn = document.getElementById('clear-logs-btn');
 const updateIndicator = document.getElementById('update-indicator');
+const loggedInPlayerElement = document.getElementById('logged-in-player');
+
+// Settings page elements
+const settingsIcon = document.getElementById('settings-icon');
+const backIcon = document.getElementById('back-icon');
+const mainPage = document.getElementById('main-page');
+const settingsPage = document.getElementById('settings-page');
+const serverAddressInput = document.getElementById('server-address');
 const focusModeSelect = document.getElementById('focus-mode-select');
 const playerSelection = document.getElementById('player-selection');
 const playerSelect = document.getElementById('player-select');
-const loggedInPlayerElement = document.getElementById('logged-in-player');
+const saveSettingsBtn = document.getElementById('save-settings-btn');
+const testConnectionBtn = document.getElementById('test-connection-btn');
 
 // Function to get current tab and check if it's an AutoDarts match page
 async function getCurrentTab() {
@@ -18,6 +28,38 @@ async function getCurrentTab() {
 // Function to check if the current page is an AutoDarts match
 function isAutoDartsMatchPage(url) {
     return url && url.match(/^https:\/\/play\.autodarts\.io\/matches\/[a-f0-9-]+$/);
+}
+
+// Function to show a message
+function showMessage(message, type = 'success') {
+    // Remove existing messages
+    const existingMessages = document.querySelectorAll('.message');
+    existingMessages.forEach(msg => msg.remove());
+    
+    // Create new message
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${type}`;
+    messageElement.textContent = message;
+    
+    // Add to current page
+    const currentPage = document.querySelector('.page.active');
+    currentPage.appendChild(messageElement);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        messageElement.remove();
+    }, 3000);
+}
+
+// Function to switch between pages
+function switchPage(pageId) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // Show target page
+    document.getElementById(pageId).classList.add('active');
 }
 
 // Function to update status display with data
@@ -117,22 +159,26 @@ async function loadPlayers() {
     }
 }
 
-// Function to save focus settings
-function saveFocusSettings() {
+// Function to save all settings
+function saveSettings() {
+    const serverAddress = serverAddressInput.value.trim();
     const focusMode = focusModeSelect.value;
     const focusedPlayer = playerSelect.value;
     
     chrome.storage.local.set({
+        serverAddress: serverAddress,
         focusMode: focusMode,
         focusedPlayer: focusedPlayer
     }, () => {
-        console.log('LuxSpy: Focus settings saved');
+        showMessage('Settings saved successfully!');
+        console.log('LuxSpy: Settings saved');
     });
 }
 
-// Function to load focus settings
-function loadFocusSettings() {
-    chrome.storage.local.get(['focusMode', 'focusedPlayer'], (result) => {
+// Function to load all settings
+function loadSettings() {
+    chrome.storage.local.get(['serverAddress', 'focusMode', 'focusedPlayer'], (result) => {
+        serverAddressInput.value = result.serverAddress || 'http://localhost:8080';
         focusModeSelect.value = result.focusMode || 'auto';
         playerSelect.value = result.focusedPlayer || '';
         
@@ -143,6 +189,27 @@ function loadFocusSettings() {
             playerSelection.style.display = 'none';
         }
     });
+}
+
+// Function to test server connection
+async function testConnection() {
+    const serverAddress = serverAddressInput.value.trim();
+    if (!serverAddress) {
+        showMessage('Please enter a server address', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${serverAddress}/health`);
+        if (response.ok) {
+            const data = await response.json();
+            showMessage(`Connection successful! Server: ${data.service}`, 'success');
+        } else {
+            showMessage(`Server responded with status: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Connection failed: ${error.message}`, 'error');
+    }
 }
 
 // Function to clear console logs
@@ -171,9 +238,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-// Event listeners
+// Navigation event listeners
+settingsIcon.addEventListener('click', () => {
+    switchPage('settings-page');
+    loadSettings();
+});
+
+backIcon.addEventListener('click', () => {
+    switchPage('main-page');
+    updateStatus();
+});
+
+// Main page event listeners
 refreshBtn.addEventListener('click', updateStatus);
 clearLogsBtn.addEventListener('click', clearConsoleLogs);
+
+// Settings page event listeners
+saveSettingsBtn.addEventListener('click', saveSettings);
+testConnectionBtn.addEventListener('click', testConnection);
 
 // Focus control event listeners
 focusModeSelect.addEventListener('change', () => {
@@ -183,11 +265,11 @@ focusModeSelect.addEventListener('change', () => {
     } else {
         playerSelection.style.display = 'none';
     }
-    saveFocusSettings();
+    saveSettings();
 });
 
-playerSelect.addEventListener('change', saveFocusSettings);
+playerSelect.addEventListener('change', saveSettings);
 
 // Initial setup
-loadFocusSettings();
+loadSettings();
 updateStatus();

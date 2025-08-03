@@ -55,10 +55,12 @@ function isCurrentPlayerInNavigation() {
 
 // Function to send event to LuxSpy server
 async function sendEventToServer(eventData) {
-    const serverUrl = `${CONFIG.SERVER_URL}/api/event`;
-    
-    try {
-        const response = await fetch(serverUrl, {
+    // Get server URL from storage, fallback to config
+    chrome.storage.local.get(['serverAddress'], (result) => {
+        const serverUrl = result.serverAddress || CONFIG.SERVER_URL;
+        const fullUrl = `${serverUrl}/api/event`;
+        
+        fetch(fullUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -67,17 +69,21 @@ async function sendEventToServer(eventData) {
                 action: 'luxspyEvent',
                 data: eventData
             })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+            }
+        })
+        .then(result => {
             console.log('LuxSpy: Event sent to server successfully:', result);
-        } else {
-            console.error('LuxSpy: Server responded with error:', response.status, response.statusText);
-        }
-    } catch (error) {
-        console.error('LuxSpy: Failed to send event to server:', error);
-    }
+        })
+        .catch(error => {
+            console.error('LuxSpy: Failed to send event to server:', error);
+        });
+    });
 }
 
 // Function to log all monitored data
