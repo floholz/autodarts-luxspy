@@ -136,7 +136,7 @@ The extension monitors these DOM elements:
 The server can be configured using environment variables:
 
 - `LED_IP`: IP address of the LED strip (default: `192.168.0.59`)
-- `PORT`: Server port (default: `8080`)
+- `PORT`: Server port (default: `3181`)
 
 Example:
 ```bash
@@ -208,15 +208,15 @@ Test the server using curl:
 
 ```bash
 # Test health endpoint
-curl http://localhost:8080/health
+curl http://localhost:3181/health
 
 # Test manual LED control
-curl -X POST http://localhost:8080/api/led \
+curl -X POST http://localhost:3181/api/led \
   -H "Content-Type: application/json" \
   -d '{"action": "purple"}'
 
 # Test event endpoint
-curl -X POST http://localhost:8080/api/event \
+curl -X POST http://localhost:3181/api/event \
   -H "Content-Type: application/json" \
   -d '{
     "action": "luxspyEvent",
@@ -237,9 +237,9 @@ curl -X POST http://localhost:8080/api/event \
 
 The extension is configured via `luxspy-ext/src/config.js`:
 
-- **Server URL**: `http://localhost:8080` (configurable)
+- **Server URL**: `http://localhost:3181` (configurable)
 - **Target URLs**: `https://play.autodarts.io/matches/*`
-- **Permissions**: `storage`, `tabs`, `http://localhost:8080/*`
+- **Permissions**: `storage`, `tabs`, `http://localhost:3181/*`
 
 ### Server Configuration
 

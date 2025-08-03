@@ -26,6 +26,8 @@ A Go web server that receives events from the LuxSpy Chrome extension and contro
 
 ## Installation
 
+### Option 1: Using Go directly
+
 1. Ensure you have Go 1.23+ installed
 2. Navigate to the server directory:
    ```bash
@@ -36,17 +38,37 @@ A Go web server that receives events from the LuxSpy Chrome extension and contro
    go run main.go
    ```
 
+### Option 2: Using Docker
+
+1. Build the Docker image:
+   ```bash
+   docker build -t luxspy-server .
+   ```
+
+2. Run the container:
+   ```bash
+   docker run -p 3181:3181 -e LED_IP=192.168.0.59 luxspy-server
+   ```
+
+   Or with custom environment variables:
+   ```bash
+   docker run -p 3181:3181 \
+     -e LED_IP=192.168.1.100 \
+     -e PORT=3181 \
+     luxspy-server
+   ```
+
 ## Configuration
 
 The server can be configured using environment variables:
 
 - `LED_IP`: IP address of the LED strip (default: `192.168.0.59`)
-- `PORT`: Server port (default: `8080`)
+- `PORT`: Server port (default: `3181`)
 
 Example:
 ```bash
 export LED_IP=192.168.1.100
-export PORT=9000
+export PORT=3181
 go run main.go
 ```
 
@@ -85,7 +107,8 @@ Health check endpoint.
 {
   "status": "healthy",
   "service": "luxspy-server",
-  "led_ip": "192.168.0.59"
+  "led_ip": "192.168.0.59",
+  "port": "3181"
 }
 ```
 
@@ -127,15 +150,15 @@ You can test the server using curl:
 
 ```bash
 # Test health endpoint
-curl http://localhost:8080/health
+curl http://localhost:3181/health
 
 # Test manual LED control
-curl -X POST http://localhost:8080/api/led \
+curl -X POST http://localhost:3181/api/led \
   -H "Content-Type: application/json" \
   -d '{"action": "purple"}'
 
 # Test event endpoint
-curl -X POST http://localhost:8080/api/event \
+curl -X POST http://localhost:3181/api/event \
   -H "Content-Type: application/json" \
   -d '{
     "action": "luxspyEvent",

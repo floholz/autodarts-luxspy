@@ -285,7 +285,7 @@ func (s *Server) Start() error {
 func main() {
 	// Get configuration from environment variables or use defaults
 	ledIP := getEnv("LED_IP", "192.168.0.59")
-	port := getEnv("PORT", "8080")
+	port := getEnv("PORT", "3181")
 
 	// Create and start server
 	server := NewServer(ledIP, port)

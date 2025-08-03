@@ -259,7 +259,7 @@ function saveSettings() {
 // Function to load all settings
 function loadSettings() {
     chrome.storage.local.get(['serverAddress'], (result) => {
-        serverAddressInput.value = result.serverAddress || 'http://localhost:8080';
+        serverAddressInput.value = result.serverAddress || 'http://localhost:3181';
     });
 }
 
