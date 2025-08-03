@@ -2,6 +2,8 @@
 
 console.log('LuxSpy: Content script loaded on AutoDarts page');
 
+
+
 // Global pause state
 let isPaused = false;
 
@@ -92,6 +94,48 @@ function isMatchPage() {
     return window.location.href.match(/^https:\/\/play\.autodarts\.io\/matches\/[a-f0-9-]+$/);
 }
 
+// Function to get all players in the current match
+function getAllPlayersInMatch() {    
+    try {
+        const players = evaluateSelectorAll(CONFIG.SELECTORS.ALL_PLAYER_NAMES);
+
+        // Look for player elements in the match
+        // const playerElements = document.querySelectorAll('[data-testid="player-name"], .player-name, [class*="player"]');
+        // 
+        // playerElements.forEach((element, index) => {
+        //     const playerName = element.textContent?.trim();
+        //     if (playerName && playerName.length > 0) {
+        //         players.push({
+        //             name: playerName,
+        //             number: index + 1
+        //         });
+        //     }
+        // });
+        
+        // If we found players, return them
+        if (players.length > 0) {
+            return players;
+        }
+        
+        // Fallback: try to get players from the current active player context
+        const currentPlayerName = getCurrentPlayerName();
+        if (currentPlayerName) {
+            // For now, we'll assume there are 2 players in a match
+            // This is a simplified approach - in a real implementation,
+            // you'd want to scan the DOM more thoroughly
+            return [
+                { name: currentPlayerName, number: getCurrentPlayerNumber() || 1 },
+                { name: 'Unknown Player', number: 2 } // Placeholder for second player
+            ];
+        }
+        
+    } catch (error) {
+        console.error('LuxSpy: Error getting players in match:', error);
+    }
+    
+    return [];
+}
+
 // Function to load pause state from storage
 function loadPauseState() {
     return new Promise((resolve) => {
@@ -117,8 +161,6 @@ function logMonitoredData() {
             gameState: 'paused',
             playerInNavigation: false,
             loggedInPlayerName: loggedInPlayerName,
-            focusMode: 'none',
-            focusedPlayer: null,
             shouldFocus: false,
             url: window.location.href,
             isMatchPage: isMatch,
@@ -148,64 +190,66 @@ function logMonitoredData() {
     const gameState = isMatch ? getGameState() : 'idle';
     const playerInNav = isMatch ? isCurrentPlayerInNavigation() : false;
     
-    // Get focus preference from storage
-    chrome.storage.local.get(['focusMode', 'focusedPlayer'], (result) => {
-        const focusMode = result.focusMode || 'auto'; // 'auto', 'manual', 'none'
-        const focusedPlayer = result.focusedPlayer || null;
+    // Implement simplified focus logic
+    let shouldFocus = false;
+    
+    if (isMatch && playerName) {
+        // Get all players in the match to determine focus
+        const allPlayers = getAllPlayersInMatch();
         
-        // Determine if we should focus on this player
-        let shouldFocus = false;
-        if (isMatch && focusMode === 'auto') {
-            // Auto mode: focus if logged-in player is playing
-            shouldFocus = loggedInPlayerName === playerName;
-        } else if (isMatch && focusMode === 'manual') {
-            // Manual mode: focus on selected player
-            shouldFocus = focusedPlayer === playerName;
-        }
-        // 'none' mode or not on match page: don't focus on any player
-        
-        const eventData = {
-            timestamp: new Date().toISOString(),
-            playerName: playerName,
-            playerNumber: playerNumber,
-            gameState: gameState,
-            playerInNavigation: playerInNav,
-            loggedInPlayerName: loggedInPlayerName,
-            focusMode: focusMode,
-            focusedPlayer: focusedPlayer,
-            shouldFocus: shouldFocus,
-            url: window.location.href,
-            isMatchPage: isMatch
-        };
-        
-        console.log('LuxSpy Event:', eventData);
-        
-        // Broadcast event to any listening popups
-        chrome.runtime.sendMessage({
-            action: 'luxspyEvent',
-            data: eventData
-        }).catch(error => {
-            // Ignore connection errors when no popup is open
-            if (error.message.includes('Receiving end does not exist')) {
-                // This is expected when no popup is listening
-                return;
+        if (allPlayers.length > 0) {
+            // Check if logged-in player is in the match
+            const loggedInPlayerInMatch = allPlayers.some(player => player === loggedInPlayerName);
+            
+            if (loggedInPlayerInMatch) {
+                // Logged-in player is in the match: focus on them (green), others get purple
+                shouldFocus = loggedInPlayerName === playerName;
+            } else {
+                // Logged-in player not in match (watch mode): first player gets green, second gets purple
+                shouldFocus = playerName === allPlayers[0];
             }
-            console.error('LuxSpy: Error sending message:', error);
-        });
-
-        // Send event to server - turn off LEDs if not on match page
-        if (isMatch) {
-            sendEventToServer(eventData);
-        } else {
-            // Send idle event to turn off LEDs when not on match page
-            const idleEventData = {
-                ...eventData,
-                gameState: 'idle',
-                shouldFocus: false
-            };
-            sendEventToServer(idleEventData);
         }
+    }
+    
+    const eventData = {
+        timestamp: new Date().toISOString(),
+        playerName: playerName,
+        playerNumber: playerNumber,
+        gameState: gameState,
+        playerInNavigation: playerInNav,
+        loggedInPlayerName: loggedInPlayerName,
+        shouldFocus: shouldFocus,
+        url: window.location.href,
+        isMatchPage: isMatch
+    };
+        
+    console.log('LuxSpy Event:', eventData);
+    
+    // Broadcast event to any listening popups
+    chrome.runtime.sendMessage({
+        action: 'luxspyEvent',
+        data: eventData
+    }).catch(error => {
+        // Ignore connection errors when no popup is open
+        if (error.message.includes('Receiving end does not exist')) {
+            // This is expected when no popup is listening
+            return;
+        }
+        console.error('LuxSpy: Error sending message:', error);
     });
+
+    // Send event to server - turn off LEDs if not on match page
+    if (isMatch) {
+        sendEventToServer(eventData);
+    } else {
+        // Send idle event to turn off LEDs when not on match page
+        const idleEventData = {
+            ...eventData,
+            gameState: 'idle',
+            shouldFocus: false
+        };
+        sendEventToServer(idleEventData);
+    }    
 }
 
 // Initial setup
@@ -277,26 +321,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const gameState = isMatch ? getGameState() : 'idle';
         const playerInNav = isMatch ? isCurrentPlayerInNavigation() : false;
         
-        // Get focus settings
-        chrome.storage.local.get(['focusMode', 'focusedPlayer'], (result) => {
-            const focusMode = result.focusMode || 'auto';
-            const focusedPlayer = result.focusedPlayer || null;
+        // Implement simplified focus logic for status
+        let shouldFocus = false;
+        
+        if (isMatch && playerName) {
+            const allPlayers = getAllPlayersInMatch();
             
-            sendResponse({
-                success: true,
-                data: {
-                    playerName: playerName,
-                    gameState: gameState,
-                    playerInNavigation: playerInNav,
-                    loggedInPlayerName: loggedInPlayerName,
-                    focusMode: focusMode,
-                    focusedPlayer: focusedPlayer,
-                    url: window.location.href,
-                    timestamp: new Date().toISOString(),
-                    isMatchPage: isMatch,
-                    isPaused: isPaused
+            if (allPlayers.length > 0) {
+                const loggedInPlayerInMatch = allPlayers.some(player => player.name === loggedInPlayerName);
+                
+                if (loggedInPlayerInMatch) {
+                    shouldFocus = loggedInPlayerName === playerName;
+                } else {
+                    shouldFocus = playerName === allPlayers[0].name;
                 }
-            });
+            }
+        }
+        
+        sendResponse({
+            success: true,
+            data: {
+                playerName: playerName,
+                gameState: gameState,
+                playerInNavigation: playerInNav,
+                loggedInPlayerName: loggedInPlayerName,
+                shouldFocus: shouldFocus,
+                url: window.location.href,
+                timestamp: new Date().toISOString(),
+                isMatchPage: isMatch,
+                isPaused: isPaused
+            }
         });
         
         return true; // Keep the message channel open for async response

@@ -14,9 +14,6 @@ const backIcon = document.getElementById('back-icon');
 const mainPage = document.getElementById('main-page');
 const settingsPage = document.getElementById('settings-page');
 const serverAddressInput = document.getElementById('server-address');
-const focusModeSelect = document.getElementById('focus-mode-select');
-const playerSelection = document.getElementById('player-selection');
-const playerSelect = document.getElementById('player-select');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const testConnectionBtn = document.getElementById('test-connection-btn');
 
@@ -185,10 +182,7 @@ function updateStatusDisplay(data) {
                 <strong>Game State:</strong> <span class="state-${data.gameState}">${data.gameState}</span>
             </div>`,
             `<div class="status-item">
-                <strong>Focus Mode:</strong> ${data.focusMode || 'auto'}
-            </div>`,
-            `<div class="status-item">
-                <strong>Should Focus:</strong> ${data.shouldFocus ? 'Yes' : 'No'}
+                <strong>Player Focus:</strong> ${data.shouldFocus ? 'Green (Focused)' : 'Purple (Unfocused)'}
             </div>`
         );
     } else {
@@ -248,44 +242,14 @@ async function updateStatus() {
     }
 }
 
-// Function to load players from the match
-async function loadPlayers() {
-    const tab = await getCurrentTab();
-    if (tab && isAutoDartsPage(tab.url)) {
-        try {
-            const response = await chrome.tabs.sendMessage(tab.id, { action: 'getPlayers' });
-            if (response && response.success && response.players) {
-                // Clear existing options
-                playerSelect.innerHTML = '<option value="">Select Player</option>';
-                
-                // Add player options
-                response.players.forEach(player => {
-                    const option = document.createElement('option');
-                    option.value = player.name;
-                    option.textContent = `${player.name} (Player ${player.number})`;
-                    playerSelect.appendChild(option);
-                });
-            } else if (response && !response.success) {
-                // Not on a match page, clear player selection
-                playerSelect.innerHTML = '<option value="">No players available (not on match page)</option>';
-            }
-        } catch (error) {
-            console.error('LuxSpy: Failed to load players:', error);
-            playerSelect.innerHTML = '<option value="">Error loading players</option>';
-        }
-    }
-}
+
 
 // Function to save all settings
 function saveSettings() {
     const serverAddress = serverAddressInput.value.trim();
-    const focusMode = focusModeSelect.value;
-    const focusedPlayer = playerSelect.value;
     
     chrome.storage.local.set({
-        serverAddress: serverAddress,
-        focusMode: focusMode,
-        focusedPlayer: focusedPlayer
+        serverAddress: serverAddress
     }, () => {
         showMessage('Settings saved successfully!', {});
         console.log('LuxSpy: Settings saved');
@@ -294,17 +258,8 @@ function saveSettings() {
 
 // Function to load all settings
 function loadSettings() {
-    chrome.storage.local.get(['serverAddress', 'focusMode', 'focusedPlayer'], (result) => {
+    chrome.storage.local.get(['serverAddress'], (result) => {
         serverAddressInput.value = result.serverAddress || 'http://localhost:8080';
-        focusModeSelect.value = result.focusMode || 'auto';
-        playerSelect.value = result.focusedPlayer || '';
-        
-        // Show/hide player selection based on mode
-        if (result.focusMode === 'manual') {
-            playerSelection.style.display = 'block';
-        } else {
-            playerSelection.style.display = 'none';
-        }
     });
 }
 
@@ -385,18 +340,7 @@ clearLogsBtn.addEventListener('click', clearConsoleLogs);
 saveSettingsBtn.addEventListener('click', saveSettings);
 testConnectionBtn.addEventListener('click', testConnection);
 
-// Focus control event listeners
-focusModeSelect.addEventListener('change', () => {
-    if (focusModeSelect.value === 'manual') {
-        playerSelection.style.display = 'block';
-        loadPlayers(); // Load players when switching to manual mode
-    } else {
-        playerSelection.style.display = 'none';
-    }
-    saveSettings();
-});
 
-playerSelect.addEventListener('change', saveSettings);
 
 // Initial setup
 loadSettings();

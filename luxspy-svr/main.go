@@ -18,8 +18,6 @@ type EventData struct {
 	GameState          string `json:"gameState"`
 	PlayerInNavigation bool   `json:"playerInNavigation"`
 	LoggedInPlayerName string `json:"loggedInPlayerName"`
-	FocusMode          string `json:"focusMode"`
-	FocusedPlayer      string `json:"focusedPlayer"`
 	ShouldFocus        bool   `json:"shouldFocus"`
 	URL                string `json:"url"`
 }
