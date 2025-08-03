@@ -147,9 +147,17 @@ function logMonitoredData() {
             console.error('LuxSpy: Error sending message:', error);
         });
 
-        // Only send event to server if we're on a match page
+        // Send event to server - turn off LEDs if not on match page
         if (isMatch) {
             sendEventToServer(eventData);
+        } else {
+            // Send idle event to turn off LEDs when not on match page
+            const idleEventData = {
+                ...eventData,
+                gameState: 'idle',
+                shouldFocus: false
+            };
+            sendEventToServer(idleEventData);
         }
     });
 }
