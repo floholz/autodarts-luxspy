@@ -28,10 +28,9 @@ body {
     opacity: 0.8;
 }
 
-.settings-icon, .back-icon {
+.settings-icon, .back-icon, .pause-icon {
     position: absolute;
     top: 20px;
-    right: 20px;
     cursor: pointer;
     padding: 5px;
     border-radius: 4px;
@@ -39,14 +38,42 @@ body {
     opacity: 0.8;
 }
 
+.settings-icon {
+    right: 20px;
+}
+
 .back-icon {
     right: auto;
     left: 20px;
 }
 
-.settings-icon:hover, .back-icon:hover {
+.pause-icon {
+    left: 20px;
+}
+
+.settings-icon:hover, .back-icon:hover, .pause-icon:hover {
     background: rgba(255, 255, 255, 0.1);
     opacity: 1;
+}
+
+.pause-icon.paused {
+    opacity: 0.5;
+}
+
+.pause-icon.paused .pause-svg {
+    display: none;
+}
+
+.pause-icon.paused .play-svg {
+    display: block;
+}
+
+.pause-icon:not(.paused) .pause-svg {
+    display: block;
+}
+
+.pause-icon:not(.paused) .play-svg {
+    display: none;
 }
 
 .logged-in-player {
@@ -129,6 +156,11 @@ body {
 
 .state-idle {
     color: #94a3b8;
+    font-weight: 600;
+}
+
+.state-paused {
+    color: #fbbf24;
     font-weight: 600;
 }
 

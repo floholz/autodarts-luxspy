@@ -2,6 +2,9 @@
 
 console.log('LuxSpy: Content script loaded on AutoDarts page');
 
+// Global pause state
+let isPaused = false;
+
 // Function to get current player name
 function getCurrentPlayerName() {
     return evaluateSelector(CONFIG.SELECTORS.PLAYER_NAME);
@@ -89,10 +92,55 @@ function isMatchPage() {
     return window.location.href.match(/^https:\/\/play\.autodarts\.io\/matches\/[a-f0-9-]+$/);
 }
 
+// Function to load pause state from storage
+function loadPauseState() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['isPaused'], (result) => {
+            isPaused = result.isPaused || false;
+            console.log(`LuxSpy: Monitoring ${isPaused ? 'paused' : 'active'}`);
+            resolve();
+        });
+    });
+}
+
 // Function to log all monitored data
 function logMonitoredData() {
     const loggedInPlayerName = getLoggedInPlayerName();
     const isMatch = isMatchPage();
+    
+    // If paused, only get logged-in player info and don't send server requests
+    if (isPaused) {
+        const eventData = {
+            timestamp: new Date().toISOString(),
+            playerName: null,
+            playerNumber: null,
+            gameState: 'paused',
+            playerInNavigation: false,
+            loggedInPlayerName: loggedInPlayerName,
+            focusMode: 'none',
+            focusedPlayer: null,
+            shouldFocus: false,
+            url: window.location.href,
+            isMatchPage: isMatch,
+            isPaused: true
+        };
+        
+        console.log('LuxSpy Event (PAUSED):', eventData);
+        
+        // Still broadcast to popup but don't send to server
+        chrome.runtime.sendMessage({
+            action: 'luxspyEvent',
+            data: eventData
+        }).catch(error => {
+            // Ignore connection errors when no popup is open
+            if (error.message.includes('Receiving end does not exist')) {
+                return;
+            }
+            console.error('LuxSpy: Error sending message:', error);
+        });
+        
+        return;
+    }
     
     // Only get match-specific data if we're on a match page
     const playerName = isMatch ? getCurrentPlayerName() : null;
@@ -160,8 +208,11 @@ function logMonitoredData() {
     });
 }
 
-// Initial log
-logMonitoredData();
+// Initial setup
+(async () => {
+    await loadPauseState();
+    logMonitoredData();
+})();
 
 // Set up MutationObserver to watch for DOM changes
 const observer = new MutationObserver((mutations) => {
@@ -213,7 +264,11 @@ document.addEventListener('visibilitychange', () => {
 
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'getStatus') {
+    if (request.action === 'setPauseState') {
+        isPaused = request.isPaused;
+        console.log(`LuxSpy: Monitoring ${isPaused ? 'paused' : 'resumed'}`);
+        sendResponse({ success: true });
+    } else if (request.action === 'getStatus') {
         const loggedInPlayerName = getLoggedInPlayerName();
         const isMatch = isMatchPage();
         
@@ -238,7 +293,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     focusedPlayer: focusedPlayer,
                     url: window.location.href,
                     timestamp: new Date().toISOString(),
-                    isMatchPage: isMatch
+                    isMatchPage: isMatch,
+                    isPaused: isPaused
                 }
             });
         });

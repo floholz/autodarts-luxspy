@@ -6,6 +6,7 @@ const refreshBtn = document.getElementById('refresh-btn');
 const clearLogsBtn = document.getElementById('clear-logs-btn');
 const updateIndicator = document.getElementById('update-indicator');
 const loggedInPlayerElement = document.getElementById('logged-in-player');
+const pauseIcon = document.getElementById('pause-icon');
 
 // Settings page elements
 const settingsIcon = document.getElementById('settings-icon');
@@ -67,6 +68,69 @@ function switchPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
+// Function to toggle pause state
+async function togglePause() {
+    const tab = await getCurrentTab();
+    if (!tab || !isAutoDartsPage(tab.url)) {
+        showMessage('Not on an AutoDarts page', 'error');
+        return;
+    }
+
+    try {
+        // Get current pause state
+        const result = await chrome.storage.local.get(['isPaused']);
+        const isPaused = !result.isPaused; // Toggle the state
+        
+        // Save new pause state
+        await chrome.storage.local.set({ isPaused: isPaused });
+        
+        // Update UI
+        updatePauseIcon(isPaused);
+        
+        // Send pause command to content script
+        await chrome.tabs.sendMessage(tab.id, { 
+            action: 'setPauseState', 
+            isPaused: isPaused 
+        });
+        
+        // Show feedback message
+        showMessage(`Monitoring ${isPaused ? 'paused' : 'resumed'}`, 'success');
+        
+        // Refresh status display to show updated state
+        await updateStatus();
+        
+    } catch (error) {
+        console.error('LuxSpy: Failed to toggle pause state:', error);
+        showMessage('Failed to toggle pause state', 'error');
+    }
+}
+
+// Function to update pause icon appearance
+function updatePauseIcon(isPaused) {
+    const pauseSvg = pauseIcon.querySelector('.pause-svg');
+    const playSvg = pauseIcon.querySelector('.play-svg');
+    
+    if (isPaused) {
+        pauseIcon.classList.add('paused');
+        pauseIcon.title = 'Resume monitoring';
+        pauseSvg.style.display = 'none';
+        playSvg.style.display = 'block';
+    } else {
+        pauseIcon.classList.remove('paused');
+        pauseIcon.title = 'Pause monitoring';
+        pauseSvg.style.display = 'block';
+        playSvg.style.display = 'none';
+    }
+}
+
+// Function to load pause state
+function loadPauseState() {
+    chrome.storage.local.get(['isPaused'], (result) => {
+        const isPaused = result.isPaused || false;
+        updatePauseIcon(isPaused);
+    });
+}
+
 // Function to update status display with data
 function updateStatusDisplay(data) {
     // Update logged-in player in header
@@ -87,6 +151,15 @@ function updateStatusDisplay(data) {
             <strong>Page Type:</strong> ${data.isMatchPage ? 'Match Page' : 'AutoDarts Page'}
         </div>`
     ];
+    
+    // Add pause status if paused
+    if (data.isPaused) {
+        statusItems.push(
+            `<div class="status-item">
+                <strong>Status:</strong> <span class="state-paused">PAUSED</span>
+            </div>`
+        );
+    }
     
     if (data.isMatchPage) {
         statusItems.push(
@@ -278,6 +351,9 @@ backIcon.addEventListener('click', () => {
     updateStatus();
 });
 
+// Pause functionality
+pauseIcon.addEventListener('click', togglePause);
+
 // Main page event listeners
 refreshBtn.addEventListener('click', updateStatus);
 clearLogsBtn.addEventListener('click', clearConsoleLogs);
@@ -301,4 +377,5 @@ playerSelect.addEventListener('change', saveSettings);
 
 // Initial setup
 loadSettings();
+loadPauseState();
 updateStatus();
