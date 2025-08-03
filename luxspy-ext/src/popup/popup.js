@@ -280,12 +280,16 @@ async function testConnection() {
     }
 
     try {
-        const response = await fetch(`${serverAddress}/health`);
-        if (response.ok) {
-            const data = await response.json();
-            showMessage(`Connection successful! Server: ${data.service}`, { type: 'success', target: testConnectionBtn, onClose: onClose });
+        // Send message to background script to test connection
+        const response = await chrome.runtime.sendMessage({
+            action: 'testConnection',
+            serverUrl: serverAddress
+        });
+        
+        if (response && response.success) {
+            showMessage(`Connection successful! Server: ${response.data.service}`, { type: 'success', target: testConnectionBtn, onClose: onClose });
         } else {
-            showMessage(`Server responded with status: ${response.status}`, { type: 'error', target: testConnectionBtn, onClose: onClose });
+            showMessage(`Connection failed: ${response.error}`, { type: 'error', target: testConnectionBtn, onClose: onClose });
         }
     } catch (error) {
         showMessage(`Connection failed: ${error.message}`, { type: 'error', target: testConnectionBtn, onClose: onClose });

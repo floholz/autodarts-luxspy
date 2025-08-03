@@ -34,6 +34,7 @@ LuxSpy is designed to monitor and analyze DOM events on AutoDarts pages (`https:
 - Real-time popup status updates
 - Manual LED control via API
 - Health monitoring and debugging tools
+- Background script handles HTTP requests to avoid mixed content issues
 
 ## Project Structure
 
@@ -270,6 +271,7 @@ Server configuration via environment variables:
 2. **LED Connection**: Verify LED strip IP address and network connectivity
 3. **Extension Not Working**: Check if the page is an AutoDarts match page
 4. **Server Won't Start**: Check if port is already in use
+5. **Mixed Content Errors**: The extension uses background scripts to handle HTTP requests, avoiding mixed content issues on HTTPS pages
 
 ### LED Protocol
 

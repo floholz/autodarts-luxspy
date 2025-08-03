@@ -56,37 +56,23 @@ function isCurrentPlayerInNavigation() {
     return loggedInPlayerName === currentPlayerName;
 }
 
-// Function to send event to LuxSpy server
+// Function to send event to LuxSpy server via background script
 async function sendEventToServer(eventData) {
-    // Get server URL from storage, fallback to config
-    chrome.storage.local.get(['serverAddress'], (result) => {
-        const serverUrl = result.serverAddress || CONFIG.SERVER_URL;
-        const fullUrl = `${serverUrl}/api/event`;
-        
-        fetch(fullUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'luxspyEvent',
-                data: eventData
-            })
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-            }
-        })
-        .then(result => {
-            console.log('LuxSpy: Event sent to server successfully:', result);
-        })
-        .catch(error => {
-            console.error('LuxSpy: Failed to send event to server:', error);
+    try {
+        // Send message to background script to handle the server request
+        const response = await chrome.runtime.sendMessage({
+            action: 'luxspyEvent',
+            data: eventData
         });
-    });
+        
+        if (response && response.success) {
+            console.log('LuxSpy: Event sent to server successfully:', response.data);
+        } else if (response && !response.success) {
+            console.error('LuxSpy: Server request failed:', response.error);
+        }
+    } catch (error) {
+        console.error('LuxSpy: Failed to send event to background script:', error);
+    }
 }
 
 // Function to check if we're on a match page
@@ -98,19 +84,6 @@ function isMatchPage() {
 function getAllPlayersInMatch() {    
     try {
         const players = evaluateSelectorAll(CONFIG.SELECTORS.ALL_PLAYER_NAMES);
-
-        // Look for player elements in the match
-        // const playerElements = document.querySelectorAll('[data-testid="player-name"], .player-name, [class*="player"]');
-        // 
-        // playerElements.forEach((element, index) => {
-        //     const playerName = element.textContent?.trim();
-        //     if (playerName && playerName.length > 0) {
-        //         players.push({
-        //             name: playerName,
-        //             number: index + 1
-        //         });
-        //     }
-        // });
         
         // If we found players, return them
         if (players.length > 0) {
