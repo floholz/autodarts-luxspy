@@ -1,10 +1,9 @@
 {
   "name": "LuxSpy",
-  "description": "Monitor and analyze DOM events on AutoDarts match pages",
+  "description": "Monitor Autodarts board state and control LEDs",
   "version": "0.1.0",
   "manifest_version": 3,
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["http://localhost:3181/*"],
   "icons": {
     "16": "images/luxspy-icon-16.png",
     "32": "images/luxspy-icon-32.png",
