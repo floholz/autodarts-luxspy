@@ -41,8 +41,8 @@
   "commands": {
       "_execute_action": {
         "suggested_key": {
-          "default": "Alt+Q",
-          "mac": "Alt+Q"
+          "default": "Alt+S",
+          "mac": "Alt+S"
         },
         "description": "Opens popup.html"
       }
