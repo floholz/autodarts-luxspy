@@ -35,6 +35,10 @@ const CONFIG = {
         TAKEOUT_STATE: {
             selector: 'div.css-3nk254'
         },
+        /** @type {SelectorEvaluator} Error state selector - returns element if exists */
+        ERROR_STATE: {
+            selector: 'div.css-13u3cwk'
+        },
         /** @type {SelectorEvaluator} Navigation image selector - extracts alt text */
         NAVIGATION_IMG: {
             selector: '.navigation *> img', 

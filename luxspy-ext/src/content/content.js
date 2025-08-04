@@ -34,6 +34,8 @@ function getGameState() {
         return 'ready';
     } else if (evaluateSelector(CONFIG.SELECTORS.TAKEOUT_STATE)) {
         return 'takeout';
+    } else if (evaluateSelector(CONFIG.SELECTORS.ERROR_STATE)) {
+        return 'error';
     } else {
         return 'idle';
     }

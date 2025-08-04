@@ -164,6 +164,11 @@ body {
     font-weight: 600;
 }
 
+.state-error {
+    color: #f87171;
+    font-weight: 600;
+}
+
 .error {
     color: #f87171;
     background: rgba(248, 113, 113, 0.1);
