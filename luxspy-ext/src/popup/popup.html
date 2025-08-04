@@ -62,6 +62,35 @@
                 <button id="test-connection-btn" class="action-button">Test Connection</button>
             </div>
             
+            <div class="settings-section">
+                <h2>State Testing</h2>
+                <div class="setting-item">
+                    <label for="test-state-select">Test State:</label>
+                    <select id="test-state-select">
+                        <option value="ready">Ready</option>
+                        <option value="takeout">Takeout</option>
+                        <option value="error">Error</option>
+                        <option value="idle">Idle</option>
+                    </select>
+                    <p class="setting-description">Select a state to test on the board</p>
+                </div>
+                <div class="setting-item">
+                    <label for="test-focus-select">Player Focus:</label>
+                    <select id="test-focus-select">
+                        <option value="true">Focused (Green)</option>
+                        <option value="false">Unfocused (Purple)</option>
+                    </select>
+                    <p class="setting-description">Select player focus for ready state</p>
+                </div>
+                <button id="test-state-btn" class="action-button">Send Test State</button>
+            </div>
+            
+            <div class="settings-section">
+                <h2>Board Control</h2>
+                <button id="reset-state-btn" class="action-button">Reset to Idle</button>
+                <p class="setting-description">Set the board to idle state (LEDs off)</p>
+            </div>
+            
 
             
             <div class="actions-section">

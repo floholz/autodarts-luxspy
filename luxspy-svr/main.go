@@ -38,8 +38,9 @@ var (
 	ColorRed    = []byte{0xFF, 0x00, 0x00} // Red for errors
 	ColorGreen  = []byte{0x00, 0xFF, 0x00} // Green for player 1 ready
 	ColorPurple = []byte{0xFF, 0x00, 0xFF} // Purple/Pink for player 2 ready
-	ColorYellow = []byte{0xFF, 0xFF, 0x00} // Yellow for takeout
+	ColorYellow = []byte{0xFF, 0xC8, 0x00} // Yellow for takeout
 	ColorOff    = []byte{0x00, 0x00, 0x00} // Off/black
+	ColorWhite  = []byte{0xFF, 0xFF, 0xFF} // White for unknown/error states
 )
 
 // NewLEDController creates a new LED controller instance
@@ -113,9 +114,12 @@ func (lc *LEDController) SetColorByState(gameState string, playerNumber *int, sh
 	case "idle":
 		color = ColorOff
 		log.Printf("Setting LED to OFF (idle state)")
-	default:
+	case "error":
 		color = ColorRed
-		log.Printf("Setting LED to RED (unknown/error state: %s)", gameState)
+		log.Printf("Setting LED to RED (error state)")
+	default:
+		color = ColorWhite
+		log.Printf("Setting LED to WHITE (unknown/error state: %s)", gameState)
 	}
 
 	return lc.SetRGBColor(color[0], color[1], color[2])
@@ -231,6 +235,57 @@ func (s *Server) handleLEDControl(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleTestState provides a test endpoint to set the board to a specific state
+func (s *Server) handleTestState(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		GameState    string `json:"gameState"`
+		PlayerNumber *int   `json:"playerNumber,omitempty"`
+		ShouldFocus  bool   `json:"shouldFocus"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Validate game state
+	validStates := map[string]bool{
+		"ready":   true,
+		"takeout": true,
+		"idle":    true,
+		"error":   true,
+	}
+	if !validStates[request.GameState] {
+		http.Error(w, "Invalid game state. Must be one of: ready, takeout, idle, error", http.StatusBadRequest)
+		return
+	}
+
+	// Set LED color based on test state
+	if err := s.ledController.SetColorByState(request.GameState, request.PlayerNumber, request.ShouldFocus); err != nil {
+		log.Printf("Error setting test state: %v", err)
+		http.Error(w, "Failed to set test state", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Test state set: gameState=%s, playerNumber=%v, shouldFocus=%t",
+		request.GameState, request.PlayerNumber, request.ShouldFocus)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":       "success",
+		"gameState":    request.GameState,
+		"playerNumber": request.PlayerNumber,
+		"shouldFocus":  request.ShouldFocus,
+		"message":      fmt.Sprintf("Board set to %s state", request.GameState),
+	})
+}
+
 // corsMiddleware adds CORS headers to all responses
 func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -256,6 +311,7 @@ func (s *Server) Start() error {
 	http.HandleFunc("/api/event", corsMiddleware(s.handleLuxSpyEvent))
 	http.HandleFunc("/health", corsMiddleware(s.handleHealthCheck))
 	http.HandleFunc("/api/led", corsMiddleware(s.handleLEDControl))
+	http.HandleFunc("/api/test-state", corsMiddleware(s.handleTestState))
 
 	// Catch-all route for 404s
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -278,6 +334,7 @@ func (s *Server) Start() error {
 	log.Printf("  POST /api/event     - Receive events from Chrome extension")
 	log.Printf("  GET  /health        - Health check")
 	log.Printf("  POST /api/led       - Manual LED control")
+	log.Printf("  POST /api/test-state - Test board state")
 
 	return http.ListenAndServe(":"+s.port, nil)
 }

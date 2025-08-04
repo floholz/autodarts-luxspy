@@ -66,6 +66,35 @@ async function testServerConnection(serverUrl) {
     }
 }
 
+// Function to send test state to server
+async function sendTestState(serverUrl, gameState, shouldFocus) {
+    try {
+        const fullUrl = `${serverUrl}/api/test-state`;
+        const response = await fetch(fullUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                gameState: gameState,
+                shouldFocus: shouldFocus
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('LuxSpy: Test state sent successfully:', data);
+            return { success: true, data: data };
+        } else {
+            const errorText = await response.text();
+            throw new Error(`Server responded with ${response.status}: ${errorText}`);
+        }
+    } catch (error) {
+        console.error('LuxSpy: Failed to send test state:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // Handle messages from content script and forward to popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'luxspyEvent') {
@@ -90,6 +119,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action === 'testConnection') {
         // Test server connection
         testServerConnection(message.serverUrl).then(result => {
+            sendResponse(result);
+        });
+        
+        // Return true to indicate we'll send a response asynchronously
+        return true;
+    } else if (message.action === 'testState') {
+        // Send test state to server
+        sendTestState(message.serverUrl, message.gameState, message.shouldFocus).then(result => {
             sendResponse(result);
         });
         

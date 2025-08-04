@@ -16,6 +16,10 @@ const settingsPage = document.getElementById('settings-page');
 const serverAddressInput = document.getElementById('server-address');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const testConnectionBtn = document.getElementById('test-connection-btn');
+const testStateSelect = document.getElementById('test-state-select');
+const testFocusSelect = document.getElementById('test-focus-select');
+const testStateBtn = document.getElementById('test-state-btn');
+const resetStateBtn = document.getElementById('reset-state-btn');
 
 // Function to get current tab and check if it's an AutoDarts match page
 async function getCurrentTab() {
@@ -296,6 +300,79 @@ async function testConnection() {
     }
 }
 
+// Function to send test state request
+async function sendTestState() {
+    const serverAddress = serverAddressInput.value.trim();
+    if (!serverAddress) {
+        showMessage('Please enter a server address', { type: 'error', target: testStateBtn });
+        return;
+    }
+    
+    const gameState = testStateSelect.value;
+    const shouldFocus = testFocusSelect.value === 'true';
+    
+    // Show loading message immediately
+    testStateBtn.classList.add('hidden');
+    showMessage('Sending test state...', { type: 'loading', target: testStateBtn });
+    
+    const onClose = () => {
+        testStateBtn.classList.remove('hidden');
+    }
+
+    try {
+        // Send message to background script to test state
+        const response = await chrome.runtime.sendMessage({
+            action: 'testState',
+            serverUrl: serverAddress,
+            gameState: gameState,
+            shouldFocus: shouldFocus
+        });
+        
+        if (response && response.success) {
+            showMessage(`Test state sent successfully! State: ${response.data.gameState}`, { type: 'success', target: testStateBtn, onClose: onClose });
+        } else {
+            showMessage(`Failed to send test state: ${response.error}`, { type: 'error', target: testStateBtn, onClose: onClose });
+        }
+    } catch (error) {
+        showMessage(`Failed to send test state: ${error.message}`, { type: 'error', target: testStateBtn, onClose: onClose });
+    }
+}
+
+// Function to reset board to idle state
+async function resetToIdle() {
+    const serverAddress = serverAddressInput.value.trim();
+    if (!serverAddress) {
+        showMessage('Please enter a server address', { type: 'error', target: resetStateBtn });
+        return;
+    }
+    
+    // Show loading message immediately
+    resetStateBtn.classList.add('hidden');
+    showMessage('Resetting to idle...', { type: 'loading', target: resetStateBtn });
+    
+    const onClose = () => {
+        resetStateBtn.classList.remove('hidden');
+    }
+
+    try {
+        // Send message to background script to reset state
+        const response = await chrome.runtime.sendMessage({
+            action: 'testState',
+            serverUrl: serverAddress,
+            gameState: 'idle',
+            shouldFocus: false
+        });
+        
+        if (response && response.success) {
+            showMessage('Board reset to idle state successfully!', { type: 'success', target: resetStateBtn, onClose: onClose });
+        } else {
+            showMessage(`Failed to reset state: ${response.error}`, { type: 'error', target: resetStateBtn, onClose: onClose });
+        }
+    } catch (error) {
+        showMessage(`Failed to reset state: ${error.message}`, { type: 'error', target: resetStateBtn, onClose: onClose });
+    }
+}
+
 // Function to clear console logs
 async function clearConsoleLogs() {
     const tab = await getCurrentTab();
@@ -343,6 +420,8 @@ clearLogsBtn.addEventListener('click', clearConsoleLogs);
 // Settings page event listeners
 saveSettingsBtn.addEventListener('click', saveSettings);
 testConnectionBtn.addEventListener('click', testConnection);
+testStateBtn.addEventListener('click', sendTestState);
+resetStateBtn.addEventListener('click', resetToIdle);
 
 
 

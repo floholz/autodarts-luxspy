@@ -375,3 +375,20 @@ body {
     border: 1px solid rgba(193, 59, 246, 0.3);
     color: #ff85ff;
 }
+
+/* Test state controls styling */
+.settings-section .action-button {
+    width: 100%;
+}
+
+.settings-section .setting-description {
+    margin: 5px 0 10px 0;
+    font-size: 12px;
+    opacity: 0.7;
+    line-height: 1.4;
+}
+
+/* Board control section */
+.settings-section:last-of-type {
+    margin-bottom: 20px;
+}
