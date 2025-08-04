@@ -38,12 +38,32 @@ jobs:
 
       - name: Bump version if not changed
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: 'jasonamyers/bumpr@v1.2.0'
-        with:
-          file: 'luxspy-svr/VERSION'
-          part: 'patch'
-          commit: true
-          push: true
+        run: |
+          # Check if VERSION file was changed in this commit
+          if git diff --name-only HEAD~1 HEAD | grep -q "luxspy-svr/VERSION"; then
+            echo "VERSION file was changed, using existing version"
+          else
+            echo "VERSION file was not changed, bumping patch version"
+            # Read current version
+            current_version=$(cat luxspy-svr/VERSION)
+            # Split version into parts
+            IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+            major="${VERSION_PARTS[0]}"
+            minor="${VERSION_PARTS[1]}"
+            patch="${VERSION_PARTS[2]}"
+            # Increment patch version
+            new_patch=$((patch + 1))
+            new_version="$major.$minor.$new_patch"
+            echo "Bumping version from $current_version to $new_version"
+            # Update VERSION file
+            echo "$new_version" > luxspy-svr/VERSION
+            # Commit and push the change
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add luxspy-svr/VERSION
+            git commit -m "Bump version to $new_version [skip ci]"
+            git push
+          fi
 
       - name: Read version
         id: get_version
