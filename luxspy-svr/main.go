@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+// Version information (set via ldflags during build)
+var (
+	Version   = "dev"
+	CommitSHA = "unknown"
+	BuildDate = "unknown"
+)
+
 // EventData represents the structure of events from the Chrome extension
 type EventData struct {
 	Timestamp          string `json:"timestamp"`
@@ -286,6 +293,23 @@ func (s *Server) handleTestState(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleVersion returns version information
+func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"version":    Version,
+		"commitSHA":  CommitSHA,
+		"buildDate":  BuildDate,
+		"serverTime": time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
 // corsMiddleware adds CORS headers to all responses
 func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -312,6 +336,7 @@ func (s *Server) Start() error {
 	http.HandleFunc("/health", corsMiddleware(s.handleHealthCheck))
 	http.HandleFunc("/api/led", corsMiddleware(s.handleLEDControl))
 	http.HandleFunc("/api/test-state", corsMiddleware(s.handleTestState))
+	http.HandleFunc("/api/version", corsMiddleware(s.handleVersion))
 
 	// Catch-all route for 404s
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -335,6 +360,7 @@ func (s *Server) Start() error {
 	log.Printf("  GET  /health        - Health check")
 	log.Printf("  POST /api/led       - Manual LED control")
 	log.Printf("  POST /api/test-state - Test board state")
+	log.Printf("  GET  /api/version   - Version information")
 
 	return http.ListenAndServe(":"+s.port, nil)
 }
@@ -348,6 +374,9 @@ func main() {
 	server := NewServer(ledIP, port)
 
 	log.Printf("LuxSpy Server starting...")
+	log.Printf("Version: %s", Version)
+	log.Printf("Commit: %s", CommitSHA)
+	log.Printf("Build Date: %s", BuildDate)
 	log.Printf("LED IP: %s", ledIP)
 	log.Printf("Port: %s", port)
 

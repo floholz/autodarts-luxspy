@@ -7,7 +7,9 @@ LABEL org.opencontainers.image.title="Luxspy Server"
 LABEL org.opencontainers.image.description="Luxspy Server"
 LABEL org.opencontainers.image.authors="floholz"
 LABEL org.opencontainers.image.vendor="floholz"
-LABEL org.opencontainers.image.version="0.1.0"
+COPY VERSION .
+ARG VERSION
+LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.created="2025-08-03"
 
 WORKDIR /app
@@ -22,8 +24,14 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o luxspy-server .
+# Build the application with version information
+ARG COMMIT_SHA=unknown
+ARG BUILD_DATE=unknown
+
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -ldflags "-X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildDate=${BUILD_DATE}" \
+    -o luxspy-server .
 
 # Production stage
 FROM alpine:latest
