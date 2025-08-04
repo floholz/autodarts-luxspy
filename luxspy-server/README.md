@@ -9,6 +9,9 @@ A Go web server that receives events from the LuxSpy Chrome extension and contro
 - **Game State Mapping**: Maps AutoDarts game states to LED colors
 - **Health Monitoring**: Health check endpoint for monitoring
 - **Manual Control**: API endpoints for manual LED control
+- **State Testing**: Built-in test endpoints for testing board states
+- **Version Information**: Embedded version, commit SHA, and build date
+- **Docker Support**: Containerized deployment with automatic builds
 
 ## LED Color Mapping
 
@@ -130,6 +133,42 @@ Manual LED control endpoint.
 }
 ```
 
+### POST `/api/test-state`
+Test board state endpoint for development and testing.
+
+**Request Body:**
+```json
+{
+  "gameState": "ready|takeout|idle|error",
+  "playerNumber": 1,
+  "shouldFocus": true
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "gameState": "ready",
+  "playerNumber": 1,
+  "shouldFocus": true,
+  "message": "Board set to ready state"
+}
+```
+
+### GET `/api/version`
+Version information endpoint.
+
+**Response:**
+```json
+{
+  "version": "0.1.0",
+  "commitSHA": "abc123...",
+  "buildDate": "2024-01-01T12:00:00Z",
+  "serverTime": "2024-01-01T12:00:00Z"
+}
+```
+
 ## LED Protocol
 
 The server communicates with LED strips using the following protocol:
@@ -196,6 +235,53 @@ The server provides detailed logging for:
 - LED control commands
 - Error conditions
 
+## 🚀 **CI/CD & Deployment**
+
+### Automated Docker Build
+
+This server is automatically built and deployed via GitHub Actions:
+
+- **Workflow**: `.github/workflows/docker-build.yml`
+- **Trigger**: Changes to `luxspy-server/**` files on main branch
+- **Actions**:
+  - Builds Docker image with embedded version information
+  - Pushes to GitHub Container Registry (GHCR)
+  - Automatically bumps patch version for next build
+- **Image**: `ghcr.io/floholz/autodarts-luxspy/luxspy-server:latest`
+
+### Version Management
+
+- **Automatic**: Patch version is automatically incremented on each build
+- **Version File**: `VERSION` file contains current version
+- **Embedded Info**: Version, commit SHA, and build date are embedded in the binary
+- **API Access**: Version information available via `/api/version` endpoint
+
+### Deployment
+
+#### Using Docker (Recommended)
+```bash
+# Pull latest image
+docker pull ghcr.io/floholz/autodarts-luxspy/luxspy-server:latest
+
+# Run with default settings
+docker run -p 3181:3181 -e LED_IP=192.168.0.59 ghcr.io/floholz/autodarts-luxspy/luxspy-server:latest
+
+# Run with custom settings
+docker run -p 3181:3181 \
+  -e LED_IP=192.168.1.100 \
+  -e PORT=9000 \
+  ghcr.io/floholz/autodarts-luxspy/luxspy-server:latest
+```
+
+#### Local Development
+```bash
+# Build locally
+docker build -t luxspy-server .
+
+# Run locally
+docker run -p 3181:3181 -e LED_IP=192.168.0.59 luxspy-server
+```
+
 ## Development
 
 ### Project Structure
@@ -204,6 +290,8 @@ The server provides detailed logging for:
 luxspy-server/
 ├── main.go      # Main server implementation
 ├── go.mod       # Go module definition
+├── Dockerfile   # Docker configuration
+├── VERSION      # Version file (auto-managed)
 └── README.md    # This file
 ```
 

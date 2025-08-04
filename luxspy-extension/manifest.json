@@ -39,12 +39,12 @@
     }
   ],
   "commands": {
-      "_execute_action": {
-        "suggested_key": {
-          "default": "Alt+S",
-          "mac": "Alt+S"
-        },
-        "description": "Opens popup.html"
-      }
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+S",
+        "mac": "Alt+S"
+      },
+      "description": "Opens popup.html"
     }
   }
+}

@@ -9,6 +9,14 @@ LuxSpy is designed to monitor and analyze DOM events on AutoDarts pages (`https:
 - **Chrome Extension** (`luxspy-extension/`): Monitors DOM changes in real-time and detects player states
 - **Go Server** (`luxspy-server/`): Processes events and controls RGB LED strips via TCP protocol
 
+## 🚀 **CI/CD Pipeline**
+
+This project includes automated CI/CD workflows:
+
+- **Docker Build & Push**: Automatically builds and pushes the Go server Docker image to GitHub Container Registry (GHCR) on main branch pushes
+- **Chrome Extension Publishing**: Automatically builds and publishes the Chrome extension to the Chrome Web Store on main branch pushes
+- **Version Management**: Rolling versioning with automatic patch increments for the server, manual versioning for the extension
+
 ## Features
 
 ### 🎯 **Real-time Game State Monitoring**
@@ -35,13 +43,15 @@ LuxSpy is designed to monitor and analyze DOM events on AutoDarts pages (`https:
 - Manual LED control via API
 - Health monitoring and debugging tools
 - Background script handles HTTP requests to avoid mixed content issues
+- **State Testing**: Built-in test endpoints and UI controls for testing board states
+- **Version Information**: API endpoint to check server version and build information
 
 ## Project Structure
 
 ```
 autodarts-luxspy/
 ├── luxspy-extension/    # Chrome extension
-│   ├── manifest.json    # Extension configuration
+│   ├── manifest.json    # Extension configuration (version managed here)
 │   ├── src/
 │   │   ├── background/  # Background script
 │   │   ├── content/     # Content script and styles
@@ -52,7 +62,12 @@ autodarts-luxspy/
 ├── luxspy-server/       # Go server
 │   ├── main.go          # Server implementation
 │   ├── go.mod           # Go module definition
+│   ├── Dockerfile       # Docker configuration
+│   ├── VERSION          # Server version file
 │   └── README.md        # Server documentation
+├── .github/workflows/   # CI/CD workflows
+│   ├── docker-build.yml # Docker build and push workflow
+│   └── extension-build.yml # Extension build and publish workflow
 └── README.md           # This file
 ```
 
@@ -151,6 +166,8 @@ go run main.go
 - `POST /api/event` - Receives events from Chrome extension
 - `GET /health` - Health check endpoint
 - `POST /api/led` - Manual LED control
+- `POST /api/test-state` - Test board state endpoint
+- `GET /api/version` - Version information endpoint
 
 ## Event Flow
 
@@ -232,6 +249,62 @@ curl -X POST http://localhost:3181/api/event \
   }'
 ```
 
+## 🚀 **CI/CD & Deployment**
+
+### Automated Workflows
+
+This project includes two main CI/CD workflows that run on pushes to the `main` branch:
+
+#### 1. **Docker Server Build & Push** (`.github/workflows/docker-build.yml`)
+- **Triggers**: Changes to `luxspy-server/**` files
+- **Actions**:
+  - Builds Docker image with version information embedded
+  - Pushes to GitHub Container Registry (GHCR)
+  - Tags images with version, branch, and commit SHA
+  - Automatically bumps patch version for next build
+- **Image**: `ghcr.io/floholz/autodarts-luxspy/luxspy-server:latest`
+
+#### 2. **Chrome Extension Build & Publish** (`.github/workflows/extension-build.yml`)
+- **Triggers**: Changes to `luxspy-extension/**` files
+- **Actions**:
+  - Reads version from `manifest.json`
+  - Builds extension package (ZIP file)
+  - Publishes to Chrome Web Store
+  - Creates GitHub release with download
+- **Extension ID**: `hbhedlfdnkhgdhgbgggdoklgkkanjilk`
+
+### Version Management
+
+- **Server**: Automatic patch version bumping (e.g., `0.1.0` → `0.1.1`)
+- **Extension**: Manual version management in `manifest.json`
+- **Version Information**: Embedded in binaries and available via API
+
+### Required Secrets
+
+For the workflows to function, add these secrets to your GitHub repository:
+
+#### Docker Build Secrets
+- `GITHUB_TOKEN` (automatically provided)
+
+#### Extension Publish Secrets
+- `CHROME_EXTENSION_ID`: `hbhedlfdnkhgdhgbgggdoklgkkanjilk`
+- `CHROME_CLIENT_ID`: Your Chrome Web Store API client ID
+- `CHROME_CLIENT_SECRET`: Your Chrome Web Store API client secret
+- `CHROME_REFRESH_TOKEN`: Your Chrome Web Store API refresh token
+
+### Deployment
+
+#### Server Deployment
+```bash
+# Pull and run the latest Docker image
+docker pull ghcr.io/floholz/autodarts-luxspy/luxspy-server:latest
+docker run -p 3181:3181 -e LED_IP=192.168.0.59 ghcr.io/floholz/autodarts-luxspy/luxspy-server:latest
+```
+
+#### Extension Deployment
+- **Automatic**: Pushes to Chrome Web Store on main branch commits
+- **Manual**: Download from GitHub releases and load unpacked in Chrome
+
 ## Configuration
 
 ### Extension Configuration
@@ -246,8 +319,8 @@ The extension is configured via `luxspy-extension/src/config.js`:
 
 Server configuration via environment variables:
 
-- `LED_IP`: IP address of the LED strip
-- `PORT`: Server port
+- `LED_IP`: IP address of the LED strip (default: `192.168.0.59`)
+- `PORT`: Server port (default: `3181`)
 
 ## Monitoring and Debugging
 
