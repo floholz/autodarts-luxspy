@@ -2,7 +2,7 @@
 FROM golang:1.23-alpine AS builder
 
 # Add labels for GitHub Container Registry
-LABEL org.opencontainers.image.source="https://github.com/floholz/autodarts-luxspy"
+LABEL org.opencontainers.image.source="https://github.com/floholz/autodarts-luxspy/luxspy-server"
 LABEL org.opencontainers.image.title="Luxspy Server"
 LABEL org.opencontainers.image.description="Luxspy Server"
 LABEL org.opencontainers.image.authors="floholz"

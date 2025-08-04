@@ -27,7 +27,7 @@ The extension monitors these DOM elements:
 1. Clone this repository
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the `luxspy-ext` folder
+4. Click "Load unpacked" and select the `luxspy-extension` folder
 5. The extension will appear in your extensions list
 
 ## Usage
@@ -54,7 +54,7 @@ The extension is built using Manifest V3 and includes:
 ## Project Structure
 
 ```
-luxspy-ext/
+luxspy-extension/
 ├── manifest.json          # Extension configuration
 ├── src/
 │   ├── background/        # Background script

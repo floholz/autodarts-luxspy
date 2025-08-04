@@ -31,7 +31,7 @@ A Go web server that receives events from the LuxSpy Chrome extension and contro
 1. Ensure you have Go 1.23+ installed
 2. Navigate to the server directory:
    ```bash
-   cd luxspy-svr
+   cd luxspy-server
    ```
 3. Run the server:
    ```bash
@@ -201,7 +201,7 @@ The server provides detailed logging for:
 ### Project Structure
 
 ```
-luxspy-svr/
+luxspy-server/
 ├── main.go      # Main server implementation
 ├── go.mod       # Go module definition
 └── README.md    # This file

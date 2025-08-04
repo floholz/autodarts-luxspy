@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'luxspy-svr/**'
+      - 'luxspy-server/**'
   pull_request:
     branches: [ main ]
     paths:
-      - 'luxspy-svr/**'
+      - 'luxspy-server/**'
 
 env:
   REGISTRY: ghcr.io
@@ -38,7 +38,7 @@ jobs:
 
       - name: Read version
         id: get_version
-        run: echo "VERSION=$(cat luxspy-svr/VERSION)" >> $GITHUB_ENV
+        run: echo "VERSION=$(cat luxspy-server/VERSION)" >> $GITHUB_ENV
 
       - name: Extract metadata
         id: meta
@@ -55,8 +55,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./luxspy-svr
-          file: ./luxspy-svr/Dockerfile
+          context: ./luxspy-server
+          file: ./luxspy-server/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

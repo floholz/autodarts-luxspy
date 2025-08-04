@@ -6,8 +6,8 @@ A comprehensive monitoring system for AutoDarts match pages that combines a Chro
 
 LuxSpy is designed to monitor and analyze DOM events on AutoDarts pages (`https://play.autodarts.io/*`) and provide real-time visual feedback through LED strip control. The system consists of two main components:
 
-- **Chrome Extension** (`luxspy-ext/`): Monitors DOM changes in real-time and detects player states
-- **Go Server** (`luxspy-svr/`): Processes events and controls RGB LED strips via TCP protocol
+- **Chrome Extension** (`luxspy-extension/`): Monitors DOM changes in real-time and detects player states
+- **Go Server** (`luxspy-server/`): Processes events and controls RGB LED strips via TCP protocol
 
 ## Features
 
@@ -40,7 +40,7 @@ LuxSpy is designed to monitor and analyze DOM events on AutoDarts pages (`https:
 
 ```
 autodarts-luxspy/
-├── luxspy-ext/          # Chrome extension
+├── luxspy-extension/    # Chrome extension
 │   ├── manifest.json    # Extension configuration
 │   ├── src/
 │   │   ├── background/  # Background script
@@ -49,14 +49,14 @@ autodarts-luxspy/
 │   │   └── config.js    # Configuration file
 │   ├── images/          # Extension icons
 │   └── assets/          # Static assets
-├── luxspy-svr/          # Go server
+├── luxspy-server/       # Go server
 │   ├── main.go          # Server implementation
 │   ├── go.mod           # Go module definition
 │   └── README.md        # Server documentation
 └── README.md           # This file
 ```
 
-## Chrome Extension (`luxspy-ext/`)
+## Chrome Extension (`luxspy-extension/`)
 
 ### Features
 
@@ -85,7 +85,7 @@ The extension monitors these DOM elements:
 1. Clone this repository
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the `luxspy-ext` folder
+4. Click "Load unpacked" and select the `luxspy-extension` folder
 5. The extension will appear in your extensions list
 
 ### Usage
@@ -100,7 +100,7 @@ The extension monitors these DOM elements:
 4. **On Other Pages**: The extension tracks the logged-in player but doesn't control LEDs
 5. Click the extension icon to view current status and server configuration
 
-## Go Server (`luxspy-svr/`)
+## Go Server (`luxspy-server/`)
 
 ### Features
 
@@ -125,7 +125,7 @@ The extension monitors these DOM elements:
 1. Ensure you have Go 1.23+ installed
 2. Navigate to the server directory:
    ```bash
-   cd luxspy-svr
+   cd luxspy-server
    ```
 3. Run the server:
    ```bash
@@ -164,14 +164,14 @@ AutoDarts Page → Chrome Extension → Go Server → LED Strip
 
 ### 1. Start the Go Server
 ```bash
-cd luxspy-svr
+cd luxspy-server
 go run main.go
 ```
 
 ### 2. Load Chrome Extension
 - Open `chrome://extensions/`
 - Enable Developer mode
-- Load unpacked: `luxspy-ext/`
+- Load unpacked: `luxspy-extension/`
 
 ### 3. Test the System
 - Navigate to any AutoDarts page
@@ -192,14 +192,14 @@ go run main.go
 
 1. **Extension Development**:
    ```bash
-   cd luxspy-ext
+   cd luxspy-extension
    # Make changes to extension files
    # Reload extension in chrome://extensions/
    ```
 
 2. **Server Development**:
    ```bash
-   cd luxspy-svr
+   cd luxspy-server
    go run main.go
    ```
 
@@ -236,7 +236,7 @@ curl -X POST http://localhost:3181/api/event \
 
 ### Extension Configuration
 
-The extension is configured via `luxspy-ext/src/config.js`:
+The extension is configured via `luxspy-extension/src/config.js`:
 
 - **Server URL**: `http://localhost:3181` (configurable)
 - **Target URLs**: `https://play.autodarts.io/matches/*`
