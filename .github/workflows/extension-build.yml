@@ -24,7 +24,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-             - name: Read extension version
+      - name: Read extension version
          id: get_version
          run: |
            # Extract version from manifest.json using jq
