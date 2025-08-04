@@ -1,0 +1,87 @@
+name: Build and Publish Chrome Extension
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'luxspy-extension/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'luxspy-extension/**'
+
+env:
+  EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+             - name: Read extension version
+         id: get_version
+         run: |
+           # Extract version from manifest.json using jq
+           VERSION=$(cat luxspy-extension/manifest.json | jq -r '.version')
+           echo "VERSION=$VERSION" >> $GITHUB_ENV
+           echo "Read version from manifest.json: $VERSION"
+
+      - name: Build extension package
+        run: |
+          cd luxspy-extension
+          zip -r ../luxspy-extension-$VERSION.zip . -x "*.git*" "*.DS_Store*" "*.gitignore*" "README.md" "VERSION"
+          echo "Built extension package: luxspy-extension-$VERSION.zip"
+
+      - name: Upload extension package
+        uses: actions/upload-artifact@v4
+        with:
+          name: luxspy-extension-${{ env.VERSION }}
+          path: luxspy-extension-${{ env.VERSION }}.zip
+
+      - name: Publish to Chrome Web Store
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: trmcnvn/chrome-addon@v2
+        with:
+          extension: ${{ env.EXTENSION_ID }}
+          zip: luxspy-extension-${{ env.VERSION }}.zip
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: extension-v${{ env.VERSION }}
+          name: Chrome Extension v${{ env.VERSION }}
+          body: |
+            ## Chrome Extension v${{ env.VERSION }}
+            
+            ### Changes
+            - Auto-generated release for version ${{ env.VERSION }}
+            
+            ### Installation
+            1. Download the ZIP file
+            2. Extract to a folder
+            3. Open Chrome and go to `chrome://extensions/`
+            4. Enable "Developer mode"
+            5. Click "Load unpacked" and select the extracted folder
+          files: luxspy-extension-${{ env.VERSION }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      
+
+      - name: Output build info
+        run: |
+          echo "Extension ID: ${{ env.EXTENSION_ID }}"
+          echo "Version: ${{ env.VERSION }}"
+          echo "Package: luxspy-extension-${{ env.VERSION }}.zip" 
